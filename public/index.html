@@ -460,63 +460,6 @@
             box-shadow: 0 8px 25px rgba(201, 169, 110, 0.4);
         }
 
-        .timeline {
-            max-width: 800px;
-            margin: 0 auto;
-            position: relative;
-            padding-left: 2rem;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: linear-gradient(to bottom, var(--gold-light), var(--gold));
-        }
-
-        .timeline-item {
-            position: relative;
-            padding: 1.5rem 2rem;
-            margin-bottom: 1.5rem;
-            background: var(--bg-card);
-            border-radius: 16px;
-            box-shadow: var(--shadow);
-            border-left: 4px solid var(--gold);
-            transition: var(--transition);
-        }
-
-        .timeline-item:hover {
-            transform: translateX(8px);
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -2.4rem;
-            top: 1.8rem;
-            width: 12px;
-            height: 12px;
-            background: var(--gold);
-            border-radius: 50%;
-            border: 3px solid var(--bg-primary);
-        }
-
-        .timeline-item h4 {
-            font-family: 'Playfair Display', serif;
-            color: var(--gold-dark);
-            margin-bottom: 0.25rem;
-            transition: var(--transition);
-        }
-
-        .timeline-item p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            transition: var(--transition);
-        }
-
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -525,74 +468,12 @@
             margin: 0 auto;
         }
 
-        .gallery-item {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            aspect-ratio: 1;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .gallery-item:hover {
-            transform: scale(1.03);
-            box-shadow: 0 12px 40px var(--shadow-color);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .gallery-item:hover img {
-            transform: scale(1.05);
-        }
-
         .video-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
             max-width: 1200px;
             margin: 0 auto;
-        }
-
-        .video-card {
-            background: var(--bg-card);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: var(--transition);
-        }
-
-        .video-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px var(--shadow-color);
-        }
-
-        .video-card iframe {
-            width: 100%;
-            aspect-ratio: 16/9;
-            border: none;
-        }
-
-        .video-card-content {
-            padding: 1.5rem;
-        }
-
-        .video-card-content h4 {
-            font-family: 'Playfair Display', serif;
-            color: var(--text-primary);
-            margin-bottom: 0.25rem;
-            transition: var(--transition);
-        }
-
-        .video-card-content p {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            transition: var(--transition);
         }
 
         .message-box {
@@ -714,10 +595,6 @@
                 grid-template-columns: 1fr 1fr;
             }
 
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-
             .video-grid {
                 grid-template-columns: 1fr;
             }
@@ -732,18 +609,6 @@
 
             .map-container iframe {
                 height: 250px;
-            }
-
-            .timeline {
-                padding-left: 1.5rem;
-            }
-
-            .timeline-item {
-                padding: 1rem 1.5rem;
-            }
-
-            .timeline-item::before {
-                left: -2rem;
             }
 
             .nav-logo-text {
@@ -769,73 +634,6 @@
                 width: 30px;
                 height: 30px;
             }
-        }
-
-        /* Lightbox */
-        .lightbox {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-        }
-
-        .lightbox.active {
-            display: flex;
-        }
-
-        .lightbox img {
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-            border-radius: 8px;
-        }
-
-        .lightbox-close {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            color: white;
-            font-size: 2.5rem;
-            cursor: pointer;
-            background: none;
-            border: none;
-            font-family: 'Poppins', sans-serif;
-            transition: transform 0.3s ease;
-        }
-
-        .lightbox-close:hover {
-            transform: rotate(90deg);
-        }
-
-        [dir="rtl"] .timeline {
-            padding-left: 0;
-            padding-right: 2rem;
-        }
-
-        [dir="rtl"] .timeline::before {
-            left: auto;
-            right: 0;
-        }
-
-        [dir="rtl"] .timeline-item {
-            border-left: none;
-            border-right: 4px solid var(--gold);
-        }
-
-        [dir="rtl"] .timeline-item::before {
-            left: auto;
-            right: -2.4rem;
-        }
-
-        [dir="rtl"] .timeline-item:hover {
-            transform: translateX(-8px);
         }
 
         [dir="rtl"] .nav-links {
@@ -1003,27 +801,21 @@
         </div>
     </section>
 
-<section class="section" id="gallery">
-    <h2 class="section-title"><span data-i18n="gallery.title">Photo</span> <span class="gold" data-i18n="gallery.gallery">Gallery</span></h2>
-    <p class="section-subtitle" data-i18n="gallery.subtitle">Beautiful moments from our celebration</p>
-    <div class="gallery-grid" id="galleryGrid">
-        <div onclick="window.location.href='/gallery'" style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); transition: var(--transition); cursor: pointer;">
-            <span style="font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text-secondary);" data-i18n="gallery.afterBaptism">بعد المعمودية</span>
-            <span style="display: block; font-size: 0.9rem; margin-top: 0.3rem; color: var(--text-gold);" data-i18n="gallery.clickToView">(سيتم إضافة الصور قريباً)</span>
+    <section class="section" id="gallery">
+        <h2 class="section-title"><span data-i18n="gallery.title">Photo</span> <span class="gold" data-i18n="gallery.gallery">Gallery</span></h2>
+        <p class="section-subtitle" data-i18n="gallery.subtitle">Beautiful moments from our celebration</p>
+        <div class="gallery-grid" id="galleryGrid">
+            <!-- سيتم عرض المحتوى هنا بواسطة JavaScript -->
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="section" id="videos">
-    <h2 class="section-title"><span data-i18n="videos.title">Video</span> <span class="gold" data-i18n="videos.gallery">Gallery</span></h2>
-    <p class="section-subtitle" data-i18n="videos.subtitle">Watch the celebration unfold</p>
-    <div class="video-grid" id="videoGrid">
-        <div onclick="window.location.href='/videos'" style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); transition: var(--transition); cursor: pointer;">
-            <span style="font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text-secondary);" data-i18n="videos.afterBaptism">بعد المعمودية</span>
-            <span style="display: block; font-size: 0.9rem; margin-top: 0.3rem; color: var(--text-gold);" data-i18n="videos.clickToView">(سيتم إضافة الفيديوهات قريباً)</span>
+    <section class="section" id="videos">
+        <h2 class="section-title"><span data-i18n="videos.title">Video</span> <span class="gold" data-i18n="videos.gallery">Gallery</span></h2>
+        <p class="section-subtitle" data-i18n="videos.subtitle">Watch the celebration unfold</p>
+        <div class="video-grid" id="videoGrid">
+            <!-- سيتم عرض المحتوى هنا بواسطة JavaScript -->
         </div>
-    </div>
-</section>
+    </section>
 
     <section class="section" id="message">
         <h2 class="section-title"><span data-i18n="message.title">Parents'</span> <span class="gold" data-i18n="message.message">Message</span></h2>
@@ -1039,11 +831,6 @@
         <p>Baptism Blessing © 2026</p>
         <p><span data-i18n="footer.made">Made with</span> <span class="heart">❤️</span> <span data-i18n="footer.for">for celebrating God's blessings.</span></p>
     </footer>
-
-    <div class="lightbox" id="lightbox">
-        <button class="lightbox-close" id="lightboxClose">✕</button>
-        <img id="lightboxImage" src="" alt="Gallery image">
-    </div>
 
     <script>
         const translations = {
@@ -1076,13 +863,15 @@
                 'gallery.title': 'Photo',
                 'gallery.gallery': 'Gallery',
                 'gallery.subtitle': 'Beautiful moments from our celebration',
-                'gallery.afterBaptism': 'After Baptism',
-                'gallery.clickToView': '(Photos will be added soon)',
+                'gallery.uploaded': '✅ Photos Uploaded',
+                'gallery.notUploaded': '📷 No Photos Yet',
+                'gallery.clickToView': '(Click to view photos)',
                 'videos.title': 'Video',
                 'videos.gallery': 'Gallery',
                 'videos.subtitle': 'Watch the celebration unfold',
-                'videos.afterBaptism': 'After Baptism',
-                'videos.clickToView': '(Videos will be added soon)',
+                'videos.uploaded': '✅ Videos Uploaded',
+                'videos.notUploaded': '🎬 No Videos Yet',
+                'videos.clickToView': '(Click to view videos)',
                 'message.title': 'Parents\'',
                 'message.message': 'Message',
                 'message.subtitle': 'A word from the heart',
@@ -1120,13 +909,15 @@
                 'gallery.title': 'معرض',
                 'gallery.gallery': 'الصور',
                 'gallery.subtitle': 'لحظات جميلة من احتفالنا',
-                'gallery.afterBaptism': 'بعد المعمودية',
-                'gallery.clickToView': '(سيتم إضافة الصور قريباً)',
+                'gallery.uploaded': '✅ تم رفع الصور',
+                'gallery.notUploaded': '📷 لم يتم رفع صور بعد',
+                'gallery.clickToView': '(اضغط لعرض الصور)',
                 'videos.title': 'معرض',
                 'videos.gallery': 'الفيديوهات',
                 'videos.subtitle': 'شاهد الاحتفال يتكشف',
-                'videos.afterBaptism': 'بعد المعمودية',
-                'videos.clickToView': '(سيتم إضافة الفيديوهات قريباً)',
+                'videos.uploaded': '✅ تم رفع الفيديوهات',
+                'videos.notUploaded': '🎬 لم يتم رفع فيديوهات بعد',
+                'videos.clickToView': '(اضغط لعرض الفيديوهات)',
                 'message.title': 'رسالة',
                 'message.message': 'الوالدين',
                 'message.subtitle': 'كلمة من القلب',
@@ -1185,13 +976,6 @@
                     el.textContent = translations[lang][key];
                 }
             });
-
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                const key = el.getAttribute('data-i18n-placeholder');
-                if (translations[lang] && translations[lang][key]) {
-                    el.placeholder = translations[lang][key];
-                }
-            });
         }
 
         document.getElementById('themeToggle').addEventListener('click', function() {
@@ -1242,12 +1026,13 @@
         updateCountdown();
         setInterval(updateCountdown, 1000);
 
+        // Fetch event data from API
         async function fetchEventData() {
             try {
                 const response = await fetch('/api/event');
                 if (response.ok) {
                     const data = await response.json();
-                    if (data) {
+                    if (data && Object.keys(data).length > 0) {
                         if (data.babyName) document.getElementById('babyName').textContent = data.babyName;
                         if (data.date) document.getElementById('eventDate').textContent = data.date;
                         if (data.time) document.getElementById('eventTime').textContent = data.time;
@@ -1267,102 +1052,111 @@
 
         fetchEventData();
 
-        async function fetchGallery() {
+        // Load gallery status - show text only, not images
+        async function loadGalleryStatus() {
             try {
                 const response = await fetch('/api/gallery');
                 if (response.ok) {
                     const images = await response.json();
                     const grid = document.getElementById('galleryGrid');
                     if (images && images.length > 0) {
-                        grid.innerHTML = '';
-                        images.forEach(img => {
-                            const item = document.createElement('div');
-                            item.className = 'gallery-item';
-                            const imgEl = document.createElement('img');
-                            imgEl.src = img.url;
-                            imgEl.alt = img.title || 'Gallery image';
-                            imgEl.loading = 'lazy';
-                            item.appendChild(imgEl);
-                            item.addEventListener('click', function() {
-                                openLightbox(img.url);
-                            });
-                            grid.appendChild(item);
-                        });
+                        // Show "تم رفع الصور" message
+                        grid.innerHTML = `
+                            <div onclick="window.location.href='/gallery'" style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); transition: var(--transition); cursor: pointer;">
+                                <span style="font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text-secondary);" data-i18n="gallery.uploaded">✅ تم رفع الصور</span>
+                                <span style="display: block; font-size: 0.9rem; margin-top: 0.3rem; color: var(--text-gold);" data-i18n="gallery.clickToView">(اضغط لعرض الصور)</span>
+                            </div>
+                        `;
+                    } else {
+                        // Show "لم يتم رفع صور بعد"
+                        grid.innerHTML = `
+                            <div onclick="window.location.href='/gallery'" style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); transition: var(--transition); cursor: pointer;">
+                                <span style="font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text-secondary);" data-i18n="gallery.notUploaded">📷 لم يتم رفع صور بعد</span>
+                                <span style="display: block; font-size: 0.9rem; margin-top: 0.3rem; color: var(--text-gold);" data-i18n="gallery.clickToView">(اضغط لعرض الصور)</span>
+                            </div>
+                        `;
                     }
+                    // Re-apply translations
+                    document.querySelectorAll('[data-i18n]').forEach(el => {
+                        const key = el.getAttribute('data-i18n');
+                        if (translations[currentLang] && translations[currentLang][key]) {
+                            el.textContent = translations[currentLang][key];
+                        }
+                    });
                 }
             } catch (error) {
-                console.log('Using default gallery');
+                console.log('Error loading gallery status:', error);
             }
         }
 
-        fetchGallery();
-
-        async function fetchVideos() {
+        // Load videos status - show text only, not videos
+        async function loadVideosStatus() {
             try {
                 const response = await fetch('/api/videos');
                 if (response.ok) {
                     const videos = await response.json();
                     const grid = document.getElementById('videoGrid');
                     if (videos && videos.length > 0) {
-                        grid.innerHTML = '';
-                        videos.forEach(video => {
-                            const card = document.createElement('div');
-                            card.className = 'video-card';
-                            const iframe = document.createElement('iframe');
-                            iframe.src = video.url;
-                            iframe.title = video.title || 'Video';
-                            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-                            iframe.allowFullscreen = true;
-                            const content = document.createElement('div');
-                            content.className = 'video-card-content';
-                            const title = document.createElement('h4');
-                            title.textContent = video.title || 'Video';
-                            const desc = document.createElement('p');
-                            desc.textContent = video.description || '';
-                            content.appendChild(title);
-                            content.appendChild(desc);
-                            card.appendChild(iframe);
-                            card.appendChild(content);
-                            grid.appendChild(card);
-                        });
+                        // Show "تم رفع الفيديوهات" message
+                        grid.innerHTML = `
+                            <div onclick="window.location.href='/videos'" style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); transition: var(--transition); cursor: pointer;">
+                                <span style="font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text-secondary);" data-i18n="videos.uploaded">✅ تم رفع الفيديوهات</span>
+                                <span style="display: block; font-size: 0.9rem; margin-top: 0.3rem; color: var(--text-gold);" data-i18n="videos.clickToView">(اضغط لعرض الفيديوهات)</span>
+                            </div>
+                        `;
+                    } else {
+                        // Show "لم يتم رفع فيديوهات بعد"
+                        grid.innerHTML = `
+                            <div onclick="window.location.href='/videos'" style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); transition: var(--transition); cursor: pointer;">
+                                <span style="font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text-secondary);" data-i18n="videos.notUploaded">🎬 لم يتم رفع فيديوهات بعد</span>
+                                <span style="display: block; font-size: 0.9rem; margin-top: 0.3rem; color: var(--text-gold);" data-i18n="videos.clickToView">(اضغط لعرض الفيديوهات)</span>
+                            </div>
+                        `;
                     }
+                    // Re-apply translations
+                    document.querySelectorAll('[data-i18n]').forEach(el => {
+                        const key = el.getAttribute('data-i18n');
+                        if (translations[currentLang] && translations[currentLang][key]) {
+                            el.textContent = translations[currentLang][key];
+                        }
+                    });
                 }
             } catch (error) {
-                console.log('Using default videos');
+                console.log('Error loading videos status:', error);
             }
         }
 
-        fetchVideos();
+        loadGalleryStatus();
+        loadVideosStatus();
 
-        const lightbox = document.getElementById('lightbox');
-        const lightboxImage = document.getElementById('lightboxImage');
-        const lightboxClose = document.getElementById('lightboxClose');
-
-        function openLightbox(src) {
-            lightboxImage.src = src;
-            lightbox.classList.add('active');
-            document.body.style.overflow = 'hidden';
+        // Save default data to Firestore on first load
+        async function saveDefaultData() {
+            try {
+                const saved = localStorage.getItem('defaultDataSaved');
+                if (saved) return;
+                
+                const response = await fetch('/api/save-default', {
+                    method: 'POST',
+                });
+                if (response.ok) {
+                    localStorage.setItem('defaultDataSaved', 'true');
+                    console.log('Default data saved to Firestore');
+                }
+            } catch (error) {
+                console.log('Error saving default data:', error);
+            }
         }
 
-        lightboxClose.addEventListener('click', function() {
-            lightbox.classList.remove('active');
-            document.body.style.overflow = '';
-        });
+        saveDefaultData();
 
-        lightbox.addEventListener('click', function(e) {
-            if (e.target === lightbox) {
-                lightbox.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        });
+        // Update data every 30 seconds
+        setInterval(() => {
+            fetchEventData();
+            loadGalleryStatus();
+            loadVideosStatus();
+        }, 30000);
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
-                lightbox.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        });
-
+        // Smooth scroll for nav links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();

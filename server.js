@@ -92,8 +92,8 @@ app.use(cors({
 app.use(compression());
 
 // JSON and URL encoded
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -128,14 +128,18 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB
+    fileSize: 50 * 1024 * 1024 // 50MB for videos
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    // Allow images and videos
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/webm'
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files (JPEG, PNG, GIF, WEBP, SVG) are allowed'), false);
+      cb(new Error('Only image and video files are allowed'), false);
     }
   }
 });
@@ -272,6 +276,47 @@ app.post('/api/logout', authenticateToken, (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
+// ==================== DEFAULT DATA ROUTE ====================
+
+// POST - Save default data to Firestore (called on first load)
+app.post('/api/save-default', async (req, res) => {
+  try {
+    const defaultData = {
+      babyName: 'Mikal Mina',
+      parentsNames: 'Mina & Mariam',
+      church: 'Monastery of Saint Bishoy',
+      date: 'Saturday, July 4, 2026',
+      time: '6:00 AM',
+      reception: 'Anba Bishoy Monastery Road, Wadi El Natrun',
+      mapLink: 'https://maps.app.goo.gl/a6TVWifecD19cr9s9',
+      parentsMessage: '"We are delighted and honored by your presence to celebrate the Holy Sacrament of Baptism of our precious child Mikal Mina"',
+      babyNameAr: 'ميكال مينا',
+      parentsNamesAr: 'مينا ومريم',
+      churchAr: 'دير الأنبا بيشوي',
+      dateAr: 'السبت، ٤ يوليو ٢٠٢٦',
+      timeAr: '٦:٠٠ صباحاً',
+      receptionAr: 'طريق دير الأنبا بيشوي، وادي النطرون',
+      mapLinkAr: 'https://maps.app.goo.gl/a6TVWifecD19cr9s9',
+      parentsMessageAr: '"يسعدنا ويشرفنا حضوركم للاحتفال بسر المعمودية المقدسة لطفلتنا الغالية ميكال مينا"'
+    };
+
+    // Check if data already exists
+    const doc = await db.collection('settings').doc('event').get();
+    if (!doc.exists) {
+      await db.collection('settings').doc('event').set({
+        ...defaultData,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      res.json({ message: 'Default data saved successfully' });
+    } else {
+      res.json({ message: 'Data already exists' });
+    }
+  } catch (error) {
+    console.error('Error saving default data:', error);
+    res.status(500).json({ message: 'Error saving default data' });
+  }
+});
+
 // ==================== EVENT ROUTES ====================
 
 // GET event details
@@ -302,7 +347,15 @@ app.put('/api/event', authenticateToken, [
   body('time').optional().isString().trim(),
   body('reception').optional().isString().trim(),
   body('mapLink').optional().isURL().withMessage('Invalid URL format'),
-  body('parentsMessage').optional().isString().trim()
+  body('parentsMessage').optional().isString().trim(),
+  body('babyNameAr').optional().isString().trim(),
+  body('parentsNamesAr').optional().isString().trim(),
+  body('churchAr').optional().isString().trim(),
+  body('dateAr').optional().isString().trim(),
+  body('timeAr').optional().isString().trim(),
+  body('receptionAr').optional().isString().trim(),
+  body('mapLinkAr').optional().isURL().withMessage('Invalid URL format'),
+  body('parentsMessageAr').optional().isString().trim()
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -360,7 +413,7 @@ app.post('/api/gallery', authenticateToken, upload.single('image'), async (req, 
         {
           folder: 'baptism-blessing/gallery',
           transformation: [
-            { width: 1200, crop: 'limit', quality: 'auto' }
+            { width: 1920, crop: 'limit', quality: 'auto' }
           ],
           public_id: `gallery_${uuidv4()}`
         },
@@ -442,20 +495,35 @@ app.get('/api/videos', async (req, res) => {
   }
 });
 
-// POST add video
-app.post('/api/video', authenticateToken, [
-  body('url').isURL().withMessage('Valid URL is required'),
-  body('title').optional().isString().trim(),
-  body('description').optional().isString().trim()
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ message: errors.array()[0].msg });
+// POST upload video
+app.post('/api/video', authenticateToken, upload.single('video'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No video file provided' });
   }
 
   try {
+    // Upload video to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'baptism-blessing/videos',
+          resource_type: 'video',
+          public_id: `video_${uuidv4()}`,
+          transformation: [
+            { quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
     const videoData = {
-      url: req.body.url,
+      url: result.secure_url,
+      publicId: result.public_id,
       title: req.body.title || 'Video',
       description: req.body.description || '',
       createdAt: admin.firestore.FieldValue.serverTimestamp()
@@ -463,13 +531,16 @@ app.post('/api/video', authenticateToken, [
 
     const docRef = await db.collection('videos').add(videoData);
     res.status(201).json({ 
-      message: 'Video added successfully',
+      message: 'Video uploaded successfully',
       id: docRef.id,
-      ...videoData
+      url: result.secure_url,
+      publicId: result.public_id,
+      title: videoData.title,
+      description: videoData.description
     });
   } catch (error) {
-    console.error('Error adding video:', error);
-    res.status(500).json({ message: 'Error adding video' });
+    console.error('Error uploading video:', error);
+    res.status(500).json({ message: 'Error uploading video' });
   }
 });
 
@@ -481,6 +552,12 @@ app.delete('/api/video/:id', authenticateToken, async (req, res) => {
     const doc = await db.collection('videos').doc(id).get();
     if (!doc.exists) {
       return res.status(404).json({ message: 'Video not found' });
+    }
+
+    const videoData = doc.data();
+    
+    if (videoData.publicId) {
+      await cloudinary.uploader.destroy(videoData.publicId, { resource_type: 'video' });
     }
 
     await db.collection('videos').doc(id).delete();
@@ -614,12 +691,12 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Serve photo.html for /gallery
+// Serve gallery.html for /gallery
 app.get('/gallery', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
 });
 
-// Serve video.html for /videos
+// Serve videos.html for /videos
 app.get('/videos', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'videos.html'));
 });
@@ -646,13 +723,15 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error('Server Error:', err);
   
+  // Multer error handling
   if (err instanceof multer.MulterError) {
     if (err.code === 'FILE_TOO_LARGE') {
-      return res.status(413).json({ message: 'File too large. Maximum size is 10MB' });
+      return res.status(413).json({ message: 'File too large. Maximum size is 50MB' });
     }
     return res.status(400).json({ message: err.message });
   }
 
+  // JWT error handling
   if (err.name === 'JsonWebTokenError') {
     return res.status(403).json({ message: 'Invalid token' });
   }
@@ -661,6 +740,7 @@ app.use((err, req, res, next) => {
     return res.status(403).json({ message: 'Token expired' });
   }
 
+  // Default error
   res.status(500).json({ 
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
@@ -690,8 +770,7 @@ app.listen(PORT, () => {
   console.log(`   Gallery: http://localhost:${PORT}/gallery`);
   console.log(`   Videos: http://localhost:${PORT}/videos`);
   console.log('=================================');
-  console.log('⚠️  No default data will be created in Firestore');
-  console.log('📝 All data must be added manually through the dashboard');
+  console.log('📝 Default data will be saved on first visit');
   console.log('=================================');
 });
 

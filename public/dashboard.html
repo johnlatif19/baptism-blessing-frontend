@@ -442,6 +442,28 @@
             padding-bottom: 0.5rem;
         }
 
+        /* Video preview styles */
+        .video-preview {
+            margin-top: 0.5rem;
+            width: 100%;
+            max-width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-preview video {
+            width: 100%;
+            max-height: 150px;
+            border-radius: 8px;
+        }
+
+        .file-info {
+            font-size: 0.75rem;
+            color: var(--text-gold);
+            margin-top: 0.25rem;
+        }
+
         @media (max-width: 768px) {
             .hamburger {
                 display: flex;
@@ -489,6 +511,25 @@
 
         [dir="rtl"] .item-list .item-actions {
             flex-direction: row-reverse;
+        }
+
+        /* Scrollbar styling */
+        .item-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .item-list::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+            border-radius: 10px;
+        }
+
+        .item-list::-webkit-scrollbar-thumb {
+            background: var(--gold);
+            border-radius: 10px;
+        }
+
+        .item-list::-webkit-scrollbar-thumb:hover {
+            background: var(--gold-dark);
         }
     </style>
 </head>
@@ -668,10 +709,11 @@
                     </svg>
                     <span data-i18n="dashboard.videoManagement">Video Management</span>
                 </h3>
-                <form id="videoForm">
+                <form id="videoForm" enctype="multipart/form-data">
                     <div class="form-group">
                         <label data-i18n="dashboard.videoFile">Upload Video</label>
                         <input type="file" id="videoFile" accept="video/*" required>
+                        <div class="file-info" id="videoFileInfo">Choose a video file (max 50MB)</div>
                     </div>
                     <div class="form-group">
                         <label data-i18n="dashboard.videoTitle">Title</label>
@@ -1059,6 +1101,7 @@
                 });
                 if (response.ok) {
                     showStatus('Event information updated successfully!');
+                    loadAllData();
                 } else {
                     showStatus('Failed to update event information.', 'error');
                 }
@@ -1091,6 +1134,7 @@
                 });
                 if (response.ok) {
                     showStatus('تم تحديث معلومات الحدث بنجاح!');
+                    loadAllData();
                 } else {
                     showStatus('فشل في تحديث معلومات الحدث.', 'error');
                 }
@@ -1115,6 +1159,7 @@
                 });
                 if (response.ok) {
                     showStatus('Message updated successfully!');
+                    loadAllData();
                 } else {
                     showStatus('Failed to update message.', 'error');
                 }
@@ -1139,6 +1184,7 @@
                 });
                 if (response.ok) {
                     showStatus('تم تحديث الرسالة بنجاح!');
+                    loadAllData();
                 } else {
                     showStatus('فشل في تحديث الرسالة.', 'error');
                 }
@@ -1236,7 +1282,8 @@
                     document.getElementById('galleryFileName').textContent = '';
                     loadGallery();
                 } else {
-                    showStatus(currentLang === 'ar' ? 'فشل في رفع الصورة.' : 'Failed to upload image.', 'error');
+                    const error = await response.json();
+                    showStatus(error.message || (currentLang === 'ar' ? 'فشل في رفع الصورة.' : 'Failed to upload image.'), 'error');
                 }
             } catch (error) {
                 showStatus(currentLang === 'ar' ? 'خطأ في الشبكة. يرجى المحاولة مرة أخرى.' : 'Network error. Please try again.', 'error');
@@ -1245,7 +1292,9 @@
 
         document.getElementById('galleryFile').addEventListener('change', function() {
             const fileName = this.files[0]?.name || '';
-            document.getElementById('galleryFileName').textContent = fileName;
+            const fileSize = this.files[0]?.size || 0;
+            const sizeInMB = (fileSize / (1024 * 1024)).toFixed(2);
+            document.getElementById('galleryFileName').textContent = fileName ? `${fileName} (${sizeInMB} MB)` : '';
         });
 
         // Load videos
@@ -1267,9 +1316,16 @@
                             const div = document.createElement('div');
                             div.className = 'item';
                             div.innerHTML = `
-                                <div>
-                                    <strong>${item.title || videoLabel}</strong>
-                                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; transition: var(--transition);">${item.description || ''}</p>
+                                <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
+                                    <div style="width: 80px; height: 60px; background: #000; border-radius: 8px; overflow: hidden; flex-shrink: 0;">
+                                        <video style="width: 100%; height: 100%; object-fit: cover;" muted>
+                                            <source src="${item.url}" type="video/mp4">
+                                        </video>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <strong style="font-size: 0.9rem;">${item.title || videoLabel}</strong>
+                                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; transition: var(--transition);">${item.description || ''}</p>
+                                    </div>
                                 </div>
                                 <div class="item-actions">
                                     <button class="btn btn-danger btn-sm delete-video" data-id="${item.id}">${deleteLabel}</button>
@@ -1323,6 +1379,12 @@
                 return;
             }
 
+            // Check file size (50MB max)
+            if (file.size > 50 * 1024 * 1024) {
+                showStatus(currentLang === 'ar' ? 'حجم الفيديو كبير جداً. الحد الأقصى 50 ميجابايت.' : 'Video file is too large. Maximum size is 50MB.', 'error');
+                return;
+            }
+
             const formData = new FormData();
             formData.append('video', file);
             formData.append('title', title);
@@ -1341,12 +1403,27 @@
                     fileInput.value = '';
                     document.getElementById('videoTitle').value = '';
                     document.getElementById('videoDesc').value = '';
+                    document.getElementById('videoFileInfo').textContent = currentLang === 'ar' ? 'اختر ملف فيديو (حد أقصى 50 ميجابايت)' : 'Choose a video file (max 50MB)';
                     loadVideos();
                 } else {
-                    showStatus(currentLang === 'ar' ? 'فشل في رفع الفيديو.' : 'Failed to upload video.', 'error');
+                    const error = await response.json();
+                    showStatus(error.message || (currentLang === 'ar' ? 'فشل في رفع الفيديو.' : 'Failed to upload video.'), 'error');
                 }
             } catch (error) {
                 showStatus(currentLang === 'ar' ? 'خطأ في الشبكة. يرجى المحاولة مرة أخرى.' : 'Network error. Please try again.', 'error');
+            }
+        });
+
+        document.getElementById('videoFile').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const size = (file.size / (1024 * 1024)).toFixed(2);
+                document.getElementById('videoFileInfo').textContent = `${file.name} (${size} MB)`;
+                if (file.size > 50 * 1024 * 1024) {
+                    document.getElementById('videoFileInfo').style.color = '#e74c3c';
+                } else {
+                    document.getElementById('videoFileInfo').style.color = 'var(--text-gold)';
+                }
             }
         });
 
@@ -1377,6 +1454,13 @@
 
         // Load all data when page loads
         loadAllData();
+
+        // Reload data every 30 seconds to keep in sync
+        setInterval(() => {
+            loadAllData();
+            loadGallery();
+            loadVideos();
+        }, 30000);
 
         // Verify token on load
         fetch('/api/event', {

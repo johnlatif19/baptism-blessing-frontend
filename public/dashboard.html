@@ -1455,12 +1455,12 @@
         // Load all data when page loads
         loadAllData();
 
-        // Reload data every 30 seconds to keep in sync
+        // Reload data every 5 seconds to keep in sync
         setInterval(() => {
             loadAllData();
             loadGallery();
             loadVideos();
-        }, 30000);
+        }, 5000);
 
         // Verify token on load
         fetch('/api/event', {

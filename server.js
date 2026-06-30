@@ -524,6 +524,160 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ==================== FACE RECOGNITION ====================
+
+const FaceRecognition = require('./face-recognition');
+const faceRecognition = new FaceRecognition();
+
+// ==================== FIND MY PHOTOS ROUTES ====================
+
+// POST - رفع الصورة والبحث
+app.post('/api/find-my-photos', upload.single('image'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'No image file provided' 
+        });
+    }
+
+    // التحقق من حجم الملف (10MB)
+    const maxSize = parseInt(process.env.MAX_UPLOAD_SIZE) || 10485760;
+    if (req.file.size > maxSize) {
+        return res.status(413).json({
+            success: false,
+            message: `Image size exceeds ${maxSize / 1024 / 1024}MB limit`
+        });
+    }
+
+    // التحقق من نوع الملف
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff'];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+            success: false,
+            message: 'Only image files are allowed'
+        });
+    }
+
+    try {
+        console.log('🔍 Processing face recognition request...');
+        
+        // التحقق من وجود قاعدة البيانات
+        if (!faceRecognition.hasEmbeddingsDatabase()) {
+            return res.status(503).json({
+                success: false,
+                message: 'Gallery embeddings database is not ready. Please contact administrator.',
+                code: 'DB_NOT_READY'
+            });
+        }
+
+        // استخراج الـ Embedding من الصورة المرفوعة
+        console.log('📸 Extracting face embedding from uploaded image...');
+        const faceData = await faceRecognition.extractFaceEmbedding(req.file.buffer);
+        
+        if (faceData.error) {
+            return res.status(400).json({
+                success: false,
+                message: faceData.error
+            });
+        }
+
+        // البحث عن الصور المطابقة
+        console.log('🔎 Searching for matching faces...');
+        const results = await faceRecognition.findMatchingPhotos(faceData.embedding);
+        
+        console.log(`✅ Found ${results.total_matches} matching photos`);
+
+        // إرجاع النتائج
+        res.json({
+            success: true,
+            matches: results.matches,
+            total_matches: results.total_matches,
+            threshold_used: results.threshold_used,
+            query_face_count: faceData.face_count,
+            message: results.total_matches > 0 
+                ? `Found ${results.total_matches} matching photos`
+                : 'No matching photos found. Try another photo.'
+        });
+
+    } catch (error) {
+        console.error('❌ Face recognition error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error processing face recognition'
+        });
+    }
+});
+
+// POST - استخراج Embeddings من جميع صور المعرض (للإدارة)
+app.post('/api/admin/extract-embeddings', authenticateToken, async (req, res) => {
+    try {
+        console.log('📦 Starting embeddings extraction...');
+        
+        // جلب جميع الصور من Firestore
+        const snapshot = await db.collection('gallery')
+            .orderBy('createdAt', 'desc')
+            .get();
+        
+        const images = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            images.push({ 
+                id: doc.id, 
+                url: data.url,
+                publicId: data.publicId || '',
+                title: data.title || 'Image'
+            });
+        });
+
+        if (images.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No images found in gallery'
+            });
+        }
+
+        // استخراج الـ Embeddings
+        const result = await faceRecognition.extractAllGalleryEmbeddings(images);
+        
+        res.json({
+            success: true,
+            message: `Successfully extracted embeddings from ${images.length} images`,
+            total_images: images.length
+        });
+
+    } catch (error) {
+        console.error('❌ Extraction error:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error extracting embeddings'
+        });
+    }
+});
+
+// GET - معلومات قاعدة بيانات الـ Embeddings
+app.get('/api/admin/embeddings-info', authenticateToken, async (req, res) => {
+    try {
+        const info = faceRecognition.getDatabaseInfo();
+        
+        if (!info) {
+            return res.json({
+                exists: false,
+                message: 'No embeddings database found'
+            });
+        }
+        
+        res.json({
+            exists: true,
+            ...info
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 // ==================== START SERVER ====================
 
 app.listen(PORT, () => {

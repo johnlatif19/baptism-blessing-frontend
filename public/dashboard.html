@@ -1136,16 +1136,18 @@
 
         // Cloudinary Upload
         document.getElementById('cloudinaryUploadBtn').addEventListener('click', function() {
-            const cloudName = 'YOUR_CLOUDINARY_CLOUD_NAME'; // ضع اسم Cloudinary الخاص بك
-            const uploadPreset = 'baptism_upload'; // هتعمله في Cloudinary Dashboard
+            const cloudName = 'dpwla5xca';
+            const uploadPreset = 'baptism_upload';
             
             const widget = cloudinary.createUploadWidget({
                 cloudName: cloudName,
                 uploadPreset: uploadPreset,
-                sources: ['local', 'url', 'camera'],
+                sources: ['local'],
                 multiple: false,
                 maxFileSize: 500 * 1024 * 1024,
                 resourceType: 'video',
+                showAdvancedOptions: false,
+                cropping: false,
                 styles: {
                     palette: {
                         window: '#FFFFFF',
@@ -1161,6 +1163,39 @@
                         error: '#e74c3c',
                         textDark: '#2C1810',
                         textLight: '#FFF9F5'
+                    }
+                },
+                // تخصيص النصوص
+                text: {
+                    en: {
+                        queue: {
+                            title: 'Upload Video',
+                            title_uploading: 'Uploading...',
+                            title_done: 'Upload Complete',
+                            title_error: 'Upload Failed'
+                        },
+                        local: {
+                            browse: 'Choose Video from Device',
+                            dd_title_single: 'Drag and Drop Video Here'
+                        },
+                        upload: {
+                            button: 'Upload'
+                        }
+                    },
+                    ar: {
+                        queue: {
+                            title: 'رفع فيديو',
+                            title_uploading: 'جاري الرفع...',
+                            title_done: 'تم الرفع بنجاح',
+                            title_error: 'فشل الرفع'
+                        },
+                        local: {
+                            browse: 'اختر فيديو من الجهاز',
+                            dd_title_single: 'اسحب وأفلت الفيديو هنا'
+                        },
+                        upload: {
+                            button: 'رفع'
+                        }
                     }
                 }
             }, function(error, result) {

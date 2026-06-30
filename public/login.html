@@ -140,14 +140,9 @@
             transition: var(--transition);
         }
 
-        .password-wrapper {
-            position: relative;
+        .form-group input {
             width: 100%;
-        }
-
-        .password-wrapper input {
-            width: 100%;
-            padding: 0.85rem 3.5rem 0.85rem 1.2rem;
+            padding: 0.85rem 1.2rem;
             border: 2px solid var(--input-border);
             border-radius: 16px;
             font-family: 'Poppins', sans-serif;
@@ -157,28 +152,10 @@
             color: var(--text-primary);
         }
 
-        .password-wrapper input:focus {
+        .form-group input:focus {
             outline: none;
             border-color: var(--gold);
             box-shadow: 0 0 0 4px rgba(201, 169, 110, 0.15);
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            transition: var(--transition);
-            padding: 0.25rem;
-        }
-
-        .toggle-password:hover {
-            color: var(--gold);
         }
 
         .form-options {
@@ -315,11 +292,6 @@
             .login-controls {
                 flex-wrap: wrap;
             }
-
-            .password-wrapper input {
-                padding: 0.7rem 3rem 0.7rem 1rem;
-                font-size: 0.9rem;
-            }
         }
 
         [dir="rtl"] .form-options {
@@ -330,25 +302,42 @@
             flex-direction: row-reverse;
         }
 
-        [dir="rtl"] .password-wrapper input {
-            padding: 0.85rem 1.2rem 0.85rem 3.5rem;
-        }
-
-        [dir="rtl"] .toggle-password {
-            right: auto;
-            left: 1rem;
-        }
-
         @media (max-width: 480px) {
             [dir="rtl"] .form-options {
                 flex-direction: column;
                 align-items: flex-end;
             }
-
-            [dir="rtl"] .password-wrapper input {
-                padding: 0.7rem 1rem 0.7rem 3rem;
-            }
         }
+.password-wrapper{
+    position: relative;
+}
+
+.password-wrapper input{
+    width:100%;
+    padding-right:60px;
+}
+
+.toggle-password{
+    position:absolute;
+    top:50%;
+    right:15px;
+    transform:translateY(-50%);
+    border:none;
+    background:none;
+    cursor:pointer;
+    font-size:18px;
+    padding:0;
+}
+
+[dir="rtl"] .password-wrapper input{
+    padding-right:1.2rem;
+    padding-left:60px;
+}
+
+[dir="rtl"] .toggle-password{
+    right:auto;
+    left:15px;
+}
     </style>
 </head>
 <body>
@@ -386,7 +375,7 @@
                     <text x="50" y="78" text-anchor="middle" font-family="Playfair Display, serif" font-size="8" fill="#A67C52" font-weight="400">BAPTISM</text>
                 </svg>
                 <h1 data-i18n="login.title">Baptism Blessing Dashboard</h1>
-                <p data-i18n="login.subtitle">Log in to the Dashboard</p>
+                <p data-i18n="login.subtitle">Sign in to manage your invitation</p>
             </div>
             <form id="loginForm">
                 <div class="form-group">
@@ -396,9 +385,13 @@
                 <div class="form-group">
                     <label for="password" data-i18n="login.password">Password</label>
                     <div class="password-wrapper">
-                        <input type="password" id="password" data-i18n-placeholder="login.passwordPlaceholder" placeholder="Enter your password" required autocomplete="current-password">
-                        <button type="button" class="toggle-password" id="togglePassword" aria-label="Toggle password visibility">
-                            👁️
+                    <input type="password" id="password"
+                        data-i18n-placeholder="login.passwordPlaceholder"
+                        placeholder="Enter your password"
+                        required
+                        autocomplete="current-password">
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            🐵
                         </button>
                     </div>
                 </div>
@@ -509,20 +502,21 @@
             setLanguage(currentLang === 'en' ? 'ar' : 'en');
         });
 
-        // Load saved preferences
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        const savedLang = localStorage.getItem('language') || 'en';
-        setTheme(savedTheme);
-        setLanguage(savedLang);
 
         // Toggle password visibility
         document.getElementById('togglePassword').addEventListener('click', function() {
             const passwordInput = document.getElementById('password');
             const isPassword = passwordInput.type === 'password';
             passwordInput.type = isPassword ? 'text' : 'password';
-            this.textContent = isPassword ? '🙈' : '👁️';
+            this.textContent = isPassword ? '🙈' : '🐵';
             this.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
         });
+
+        // Load saved preferences
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        const savedLang = localStorage.getItem('language') || 'en';
+        setTheme(savedTheme);
+        setLanguage(savedLang);
 
         // Login form handler
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -567,18 +561,18 @@
         });
 
         // Check if already logged in
-        const token = localStorage.getItem('token');
-        if (token) {
-            fetch('/api/gallery', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            }).then(response => {
-                if (response.ok) {
-                    window.location.href = '/dashboard';
-                }
-            }).catch(() => {});
+const token = localStorage.getItem('token');
+if (token) {
+    fetch('/api/gallery', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    }).then(response => {
+        if (response.ok) {
+            window.location.href = '/dashboard';
         }
+    }).catch(() => {});
+}
     </script>
 </body>
 </html>

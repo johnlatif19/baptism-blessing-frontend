@@ -244,7 +244,7 @@ app.post('/api/login', [
         });
       }
       
-      return res.status(401).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
+      return res.status(401).json({ message: 'Invalid username or password' });
     }
 
     // Verify password
@@ -274,106 +274,6 @@ app.post('/api/login', [
 // Logout
 app.post('/api/logout', authenticateToken, (req, res) => {
   res.json({ message: 'Logged out successfully' });
-});
-
-// ==================== DEFAULT DATA ROUTE ====================
-
-// POST - Save default data to Firestore (called on first load)
-app.post('/api/save-default', async (req, res) => {
-  try {
-    const defaultData = {
-      babyName: 'Mikal Mina',
-      parentsNames: 'Mina & Mariam',
-      church: 'Monastery of Saint Bishoy',
-      date: 'Saturday, July 4, 2026',
-      time: '6:00 AM',
-      reception: 'Anba Bishoy Monastery Road, Wadi El Natrun',
-      mapLink: 'https://maps.app.goo.gl/a6TVWifecD19cr9s9',
-      parentsMessage: '"We are delighted and honored by your presence to celebrate the Holy Sacrament of Baptism of our precious child Mikal Mina"',
-      babyNameAr: 'ميكال مينا',
-      parentsNamesAr: 'مينا ومريم',
-      churchAr: 'دير الأنبا بيشوي',
-      dateAr: 'السبت، 4 يوليو 2026',
-      timeAr: '6:00 صباحاً',
-      receptionAr: 'طريق دير الأنبا بيشوي، وادي النطرون',
-      mapLinkAr: 'https://maps.app.goo.gl/a6TVWifecD19cr9s9',
-      parentsMessageAr: '"يسعدنا ويشرفنا حضوركم للاحتفال بسر المعمودية المقدسة لطفلتنا الغالية ميكال مينا"'
-    };
-
-    // Check if data already exists
-    const doc = await db.collection('settings').doc('event').get();
-    if (!doc.exists) {
-      await db.collection('settings').doc('event').set({
-        ...defaultData,
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-      res.json({ message: 'Default data saved successfully' });
-    } else {
-      res.json({ message: 'Data already exists' });
-    }
-  } catch (error) {
-    console.error('Error saving default data:', error);
-    res.status(500).json({ message: 'Error saving default data' });
-  }
-});
-
-// ==================== EVENT ROUTES ====================
-
-// GET event details
-app.get('/api/event', async (req, res) => {
-  try {
-    const doc = await db.collection('settings').doc('event').get();
-    if (doc.exists) {
-      const data = doc.data();
-      delete data.createdAt;
-      delete data.updatedAt;
-      res.json(data);
-    } else {
-      // Return empty object if no data exists
-      res.json({});
-    }
-  } catch (error) {
-    console.error('Error fetching event:', error);
-    res.status(500).json({ message: 'Error fetching event details' });
-  }
-});
-
-// PUT update event details
-app.put('/api/event', authenticateToken, [
-  body('babyName').optional().isString().trim(),
-  body('parentsNames').optional().isString().trim(),
-  body('church').optional().isString().trim(),
-  body('date').optional().isString().trim(),
-  body('time').optional().isString().trim(),
-  body('reception').optional().isString().trim(),
-  body('mapLink').optional().isURL().withMessage('Invalid URL format'),
-  body('parentsMessage').optional().isString().trim(),
-  body('babyNameAr').optional().isString().trim(),
-  body('parentsNamesAr').optional().isString().trim(),
-  body('churchAr').optional().isString().trim(),
-  body('dateAr').optional().isString().trim(),
-  body('timeAr').optional().isString().trim(),
-  body('receptionAr').optional().isString().trim(),
-  body('mapLinkAr').optional().isURL().withMessage('Invalid URL format'),
-  body('parentsMessageAr').optional().isString().trim()
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ message: errors.array()[0].msg });
-  }
-
-  try {
-    const eventData = req.body;
-    await db.collection('settings').doc('event').set({
-      ...eventData,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-    
-    res.json({ message: 'Event updated successfully', data: eventData });
-  } catch (error) {
-    console.error('Error updating event:', error);
-    res.status(500).json({ message: 'Error updating event details' });
-  }
 });
 
 // ==================== GALLERY ROUTES ====================
@@ -568,112 +468,6 @@ app.delete('/api/video/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== TIMELINE ROUTES ====================
-
-// GET timeline
-app.get('/api/timeline', async (req, res) => {
-  try {
-    const snapshot = await db.collection('timeline')
-      .orderBy('order', 'asc')
-      .get();
-    
-    const items = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      items.push({ 
-        id: doc.id, 
-        ...data,
-        createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null
-      });
-    });
-    res.json(items);
-  } catch (error) {
-    console.error('Error fetching timeline:', error);
-    res.status(500).json({ message: 'Error fetching timeline' });
-  }
-});
-
-// POST add timeline item
-app.post('/api/timeline', authenticateToken, [
-  body('title').notEmpty().withMessage('Title is required').trim(),
-  body('description').optional().isString().trim()
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ message: errors.array()[0].msg });
-  }
-
-  try {
-    const snapshot = await db.collection('timeline').get();
-    const order = snapshot.size;
-
-    const timelineData = {
-      title: req.body.title,
-      description: req.body.description || '',
-      order: order,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    const docRef = await db.collection('timeline').add(timelineData);
-    res.status(201).json({ 
-      message: 'Timeline item added successfully',
-      id: docRef.id,
-      ...timelineData
-    });
-  } catch (error) {
-    console.error('Error adding timeline item:', error);
-    res.status(500).json({ message: 'Error adding timeline item' });
-  }
-});
-
-// PUT update timeline item
-app.put('/api/timeline/:id', authenticateToken, [
-  body('title').optional().isString().trim(),
-  body('description').optional().isString().trim(),
-  body('order').optional().isInt({ min: 0 })
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ message: errors.array()[0].msg });
-  }
-
-  const { id } = req.params;
-
-  try {
-    const doc = await db.collection('timeline').doc(id).get();
-    if (!doc.exists) {
-      return res.status(404).json({ message: 'Timeline item not found' });
-    }
-
-    await db.collection('timeline').doc(id).update({
-      ...req.body,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    res.json({ message: 'Timeline item updated successfully' });
-  } catch (error) {
-    console.error('Error updating timeline item:', error);
-    res.status(500).json({ message: 'Error updating timeline item' });
-  }
-});
-
-// DELETE timeline item
-app.delete('/api/timeline/:id', authenticateToken, async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const doc = await db.collection('timeline').doc(id).get();
-    if (!doc.exists) {
-      return res.status(404).json({ message: 'Timeline item not found' });
-    }
-
-    await db.collection('timeline').doc(id).delete();
-    res.json({ message: 'Timeline item deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting timeline item:', error);
-    res.status(500).json({ message: 'Error deleting timeline item' });
-  }
-});
-
 // ==================== HTML ROUTES (Clean URLs) ====================
 
 // Serve index.html for root
@@ -769,8 +563,6 @@ app.listen(PORT, () => {
   console.log(`   Dashboard: http://localhost:${PORT}/dashboard`);
   console.log(`   Gallery: http://localhost:${PORT}/gallery`);
   console.log(`   Videos: http://localhost:${PORT}/videos`);
-  console.log('=================================');
-  console.log('📝 Default data will be saved on first visit');
   console.log('=================================');
 });
 

@@ -91,9 +91,9 @@ app.use(cors({
 // Compression
 app.use(compression());
 
-// JSON and URL encoded
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// JSON and URL encoded - زودنا لـ 500MB
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -127,7 +127,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB for videos
+    fileSize: 500 * 1024 * 1024 // 500MB for videos
   },
   fileFilter: (req, file, cb) => {
     // Allow images and videos
@@ -394,14 +394,19 @@ app.get('/api/videos', async (req, res) => {
   }
 });
 
-// POST upload video
+// POST upload video with extended timeout
 app.post('/api/video', authenticateToken, upload.single('video'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No video file provided' });
   }
 
+  // Check file size before upload
+  if (req.file.size > 500 * 1024 * 1024) {
+    return res.status(413).json({ message: 'File too large. Maximum size is 500MB' });
+  }
+
   try {
-    // Upload video to Cloudinary
+    // Upload video to Cloudinary with extended timeout
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -410,7 +415,8 @@ app.post('/api/video', authenticateToken, upload.single('video'), async (req, re
           public_id: `video_${uuidv4()}`,
           transformation: [
             { quality: 'auto' }
-          ]
+          ],
+          timeout: 600000 // 10 دقائق timeout
         },
         (error, result) => {
           if (error) reject(error);
@@ -439,7 +445,12 @@ app.post('/api/video', authenticateToken, upload.single('video'), async (req, re
     });
   } catch (error) {
     console.error('Error uploading video:', error);
-    res.status(500).json({ message: 'Error uploading video' });
+    // رسالة خطأ أوضح
+    if (error.message && error.message.includes('timeout')) {
+      res.status(504).json({ message: 'Upload timeout. Please try again with a smaller file.' });
+    } else {
+      res.status(500).json({ message: 'Error uploading video: ' + error.message });
+    }
   }
 });
 
@@ -519,7 +530,7 @@ app.use((err, req, res, next) => {
   // Multer error handling
   if (err instanceof multer.MulterError) {
     if (err.code === 'FILE_TOO_LARGE') {
-      return res.status(413).json({ message: 'File too large. Maximum size is 50MB' });
+      return res.status(413).json({ message: 'File too large. Maximum size is 500MB' });
     }
     return res.status(400).json({ message: err.message });
   }
@@ -562,6 +573,9 @@ app.listen(PORT, () => {
   console.log(`   Dashboard: http://localhost:${PORT}/dashboard`);
   console.log(`   Gallery: http://localhost:${PORT}/gallery`);
   console.log(`   Videos: http://localhost:${PORT}/videos`);
+  console.log('=================================');
+  console.log('📹 Video upload limit: 500MB');
+  console.log('⏱️  Cloudinary timeout: 10 minutes');
   console.log('=================================');
 });
 

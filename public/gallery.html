@@ -6,6 +6,7 @@
     <title>Baptism Blessing | Photo Gallery</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
+        /* ===== BASE STYLES ===== */
         * {
             margin: 0;
             padding: 0;
@@ -39,6 +40,9 @@
             --footer-text: #FFF9F5;
             --transition: all 0.4s ease;
             --overlay: rgba(0,0,0,0.85);
+            --success: #4CAF50;
+            --error: #f44336;
+            --warning: #ff9800;
         }
 
         [data-theme="dark"] {
@@ -74,6 +78,7 @@
             min-height: 100vh;
         }
 
+        /* ===== NAVBAR ===== */
         .navbar {
             position: fixed;
             top: 0;
@@ -162,6 +167,7 @@
             color: white;
         }
 
+        /* ===== MAIN CONTENT ===== */
         .main-content {
             padding: 8rem 5% 4rem;
             max-width: 1400px;
@@ -172,7 +178,7 @@
             font-family: 'Playfair Display', serif;
             font-size: clamp(2rem, 3.5vw, 3rem);
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             color: var(--text-primary);
             transition: var(--transition);
         }
@@ -184,6 +190,54 @@
             background-clip: text;
         }
 
+        /* ===== TABS ===== */
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 2rem;
+            border: 2px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn:hover {
+            background: var(--gold);
+            color: white;
+            border-color: var(--gold);
+        }
+
+        .tab-btn.active {
+            background: var(--gold);
+            color: white;
+            border-color: var(--gold);
+            box-shadow: 0 4px 15px rgba(201, 169, 110, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* ===== GALLERY GRID ===== */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -248,6 +302,20 @@
             color: var(--text-dark);
         }
 
+        .gallery-item .match-badge {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+
         .empty-gallery {
             text-align: center;
             padding: 4rem 2rem;
@@ -274,7 +342,325 @@
             font-size: 1.1rem;
         }
 
-        /* Lightbox */
+        /* ===== FIND MY PHOTOS ===== */
+        .find-photos-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .find-photos-intro {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .find-photos-intro h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 3px dashed var(--border-color);
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: var(--transition);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            position: relative;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-area:hover {
+            border-color: var(--gold);
+            background: var(--bg-card);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--gold);
+            background: rgba(201, 169, 110, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-area .upload-content {
+            transition: var(--transition);
+        }
+
+        .upload-area .upload-content.hidden {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-area p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .browse-btn {
+            padding: 0.75rem 2rem;
+            background: var(--gold);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .browse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(201, 169, 110, 0.4);
+        }
+
+        .upload-area .upload-preview {
+            display: none;
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .upload-area .upload-preview.show {
+            display: block;
+        }
+
+        .upload-preview img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--error);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .search-btn {
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 1.5rem auto;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .search-btn.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .search-btn.active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(201, 169, 110, 0.4);
+        }
+
+        /* Loading */
+        .loading-container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .progress-container {
+            max-width: 400px;
+            margin: 1rem auto;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-light), var(--gold));
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        /* Results */
+        .results-header {
+            text-align: center;
+            margin: 2rem 0 1.5rem;
+        }
+
+        .results-header h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--text-primary);
+        }
+
+        .results-count {
+            color: var(--gold);
+            font-size: 1.2rem;
+        }
+
+        .results-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .result-item {
+            position: relative;
+        }
+
+        .result-item .similarity-badge {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .no-results-content {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .no-results-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .no-results h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .no-results p {
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+
+        .no-results .hint {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        /* Error */
+        .error-container {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .error-content {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-content h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--error);
+            margin-bottom: 0.5rem;
+        }
+
+        .error-content p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .retry-btn {
+            padding: 0.75rem 2rem;
+            background: var(--gold);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(201, 169, 110, 0.4);
+        }
+
+        /* ===== LIGHTBOX ===== */
         .lightbox {
             display: none;
             position: fixed;
@@ -356,6 +742,7 @@
             to { transform: scale(1); opacity: 1; }
         }
 
+        /* ===== FOOTER ===== */
         .footer {
             background: var(--footer-bg);
             color: var(--footer-text);
@@ -384,6 +771,7 @@
             color: var(--blush);
         }
 
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .gallery-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -406,6 +794,24 @@
                 bottom: 1rem;
                 padding: 0.5rem 1.2rem;
                 font-size: 0.8rem;
+            }
+
+            .tab-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .upload-area {
+                padding: 2rem 1rem;
+                min-height: 200px;
+            }
+
+            .upload-icon {
+                font-size: 3rem;
+            }
+
+            .upload-area h3 {
+                font-size: 1.2rem;
             }
         }
     </style>
@@ -449,12 +855,95 @@
 
     <main class="main-content">
         <h1 class="page-title"><span data-i18n="photo.title">Photo</span> <span class="gold" data-i18n="photo.gallery">Gallery</span></h1>
-        <div class="gallery-grid" id="galleryGrid">
-            <!-- Gallery images will be loaded here -->
+
+        <!-- ===== TABS ===== -->
+        <div class="tabs-container">
+            <button class="tab-btn active" data-tab="gallery" id="tabGallery">
+                🖼️ <span data-i18n="tab.gallery">All Photos</span>
+            </button>
+            <button class="tab-btn" data-tab="find" id="tabFind">
+                🔍 <span data-i18n="tab.find">Find My Photos</span>
+            </button>
+        </div>
+
+        <!-- ===== TAB 1: GALLERY ===== -->
+        <div class="tab-content active" id="tabContentGallery">
+            <div class="gallery-grid" id="galleryGrid">
+                <!-- Gallery images loaded here -->
+            </div>
+        </div>
+
+        <!-- ===== TAB 2: FIND MY PHOTOS ===== -->
+        <div class="tab-content" id="tabContentFind">
+            <div class="find-photos-container">
+                <div class="find-photos-intro">
+                    <h2>📸 Find Yourself in Baptism Photos</h2>
+                    <p>Upload a photo of yourself and we'll find all baptism photos where you appear</p>
+                </div>
+
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content" id="uploadContent">
+                        <div class="upload-icon">🖼️</div>
+                        <h3>Drop your photo here</h3>
+                        <p>or click to browse</p>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                        <button class="browse-btn" onclick="document.getElementById('fileInput').click()">
+                            Choose Photo
+                        </button>
+                    </div>
+                    <div class="upload-preview" id="uploadPreview">
+                        <img id="previewImage" src="#" alt="Preview">
+                        <button class="remove-btn" id="removeBtn">✕</button>
+                    </div>
+                </div>
+
+                <button class="search-btn" id="searchBtn" disabled>
+                    🔍 Find My Photos
+                </button>
+
+                <!-- Loading -->
+                <div class="loading-container" id="loadingContainer" style="display: none;">
+                    <div class="spinner"></div>
+                    <p class="loading-text" id="loadingText">Searching for matching photos...</p>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div id="resultsContainer" style="display: none;">
+                    <div class="results-header">
+                        <h2>📷 Results <span class="results-count" id="resultsCount"></span></h2>
+                        <p class="results-subtitle" id="resultsSubtitle"></p>
+                    </div>
+                    <div class="gallery-grid" id="resultsGrid"></div>
+                </div>
+
+                <!-- No Results -->
+                <div class="no-results" id="noResults" style="display: none;">
+                    <div class="no-results-content">
+                        <div class="no-results-icon">😔</div>
+                        <h3>No Photos Found</h3>
+                        <p>We couldn't find any baptism photos with you in them.</p>
+                        <p class="hint">💡 Try uploading a different photo with a clearer face.</p>
+                    </div>
+                </div>
+
+                <!-- Error -->
+                <div class="error-container" id="errorContainer" style="display: none;">
+                    <div class="error-content">
+                        <div class="error-icon">⚠️</div>
+                        <h3>Something went wrong</h3>
+                        <p id="errorMessage">An error occurred while processing your request.</p>
+                        <button class="retry-btn" onclick="resetFindPhotos()">Try Again</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
-    <!-- Lightbox -->
+    <!-- ===== LIGHTBOX ===== -->
     <div class="lightbox" id="lightbox">
         <button class="lightbox-close" id="lightboxClose">✕</button>
         <img id="lightboxImage" src="" alt="Gallery image">
@@ -467,26 +956,40 @@
     </footer>
 
     <script>
-        // Theme and Language management
+        // ============================================================
+        //  TRANSLATIONS
+        // ============================================================
         const translations = {
             en: {
                 'photo.title': 'Photo',
                 'photo.gallery': 'Gallery',
                 'photo.empty': 'No photos yet',
                 'photo.emptySub': 'Photos will be added after the baptism ceremony',
+                'tab.gallery': 'All Photos',
+                'tab.find': 'Find My Photos'
             },
             ar: {
                 'photo.title': 'معرض',
                 'photo.gallery': 'الصور',
                 'photo.empty': 'لا توجد صور بعد',
                 'photo.emptySub': 'سيتم إضافة الصور بعد حفل المعمودية',
+                'tab.gallery': 'كل الصور',
+                'tab.find': 'ابحث عن صوري'
             }
         };
 
+        // ============================================================
+        //  STATE
+        // ============================================================
         let currentLang = 'en';
         let currentTheme = 'light';
         let currentImageUrl = '';
+        let selectedFile = null;
+        let isSearching = false;
 
+        // ============================================================
+        //  THEME & LANGUAGE
+        // ============================================================
         function setTheme(theme) {
             currentTheme = theme;
             document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
@@ -547,9 +1050,24 @@
         setTheme(savedTheme);
         setLanguage(savedLang);
 
-        // Download function
+        // ============================================================
+        //  TABS
+        // ============================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const tab = this.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tabContent' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            });
+        });
+
+        // ============================================================
+        //  DOWNLOAD & LIGHTBOX
+        // ============================================================
         function downloadFile(url, filename) {
-            // Use fetch to get the file as blob
             fetch(url)
                 .then(response => response.blob())
                 .then(blob => {
@@ -561,13 +1079,9 @@
                     document.body.removeChild(link);
                     URL.revokeObjectURL(link.href);
                 })
-                .catch(err => {
-                    // Fallback: open in new tab
-                    window.open(url, '_blank');
-                });
+                .catch(() => window.open(url, '_blank'));
         }
 
-        // Lightbox functions
         function openLightbox(src) {
             currentImageUrl = src;
             document.getElementById('lightboxImage').src = src;
@@ -584,12 +1098,10 @@
         document.getElementById('lightbox').addEventListener('click', function(e) {
             if (e.target === this) closeLightbox();
         });
-
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeLightbox();
         });
 
-        // Download from lightbox
         document.getElementById('lightboxDownload').addEventListener('click', function() {
             if (currentImageUrl) {
                 const filename = currentImageUrl.split('/').pop().split('?')[0] || 'image.jpg';
@@ -597,7 +1109,9 @@
             }
         });
 
-        // Load gallery images
+        // ============================================================
+        //  LOAD GALLERY
+        // ============================================================
         async function loadGallery() {
             try {
                 const response = await fetch('/api/gallery');
@@ -608,30 +1122,7 @@
                     if (images && images.length > 0) {
                         grid.innerHTML = '';
                         images.forEach(img => {
-                            const item = document.createElement('div');
-                            item.className = 'gallery-item';
-                            
-                            const imgEl = document.createElement('img');
-                            imgEl.src = img.url;
-                            imgEl.alt = img.title || 'Gallery image';
-                            imgEl.loading = 'lazy';
-                            imgEl.addEventListener('click', function(e) {
-                                if (!e.target.closest('.download-btn')) {
-                                    openLightbox(img.url);
-                                }
-                            });
-                            
-                            const downloadBtn = document.createElement('button');
-                            downloadBtn.className = 'download-btn';
-                            downloadBtn.innerHTML = '⬇ Download';
-                            downloadBtn.addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                const filename = img.url.split('/').pop().split('?')[0] || 'image.jpg';
-                                downloadFile(img.url, filename);
-                            });
-                            
-                            item.appendChild(imgEl);
-                            item.appendChild(downloadBtn);
+                            const item = createGalleryItem(img.url, img.title);
                             grid.appendChild(item);
                         });
                     } else {
@@ -642,28 +1133,275 @@
                                 <p data-i18n="photo.emptySub">Photos will be added after the baptism ceremony</p>
                             </div>
                         `;
-                        document.querySelectorAll('[data-i18n]').forEach(el => {
-                            const key = el.getAttribute('data-i18n');
-                            if (translations[currentLang] && translations[currentLang][key]) {
-                                el.textContent = translations[currentLang][key];
-                            }
-                        });
+                        updateI18n();
                     }
                 }
             } catch (error) {
                 console.error('Error loading gallery:', error);
-                const grid = document.getElementById('galleryGrid');
-                grid.innerHTML = `
-                    <div class="empty-gallery">
-                        <div class="icon">📸</div>
-                        <h3 data-i18n="photo.empty">No photos yet</h3>
-                        <p data-i18n="photo.emptySub">Photos will be added after the baptism ceremony</p>
-                    </div>
-                `;
             }
         }
 
+        function createGalleryItem(url, title, similarity = null) {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = title || 'Gallery image';
+            img.loading = 'lazy';
+            img.addEventListener('click', function(e) {
+                if (!e.target.closest('.download-btn')) {
+                    openLightbox(url);
+                }
+            });
+            
+            if (similarity !== null) {
+                const badge = document.createElement('div');
+                badge.className = 'match-badge';
+                badge.textContent = `✅ Match ${Math.round(similarity * 100)}%`;
+                item.appendChild(badge);
+            }
+            
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'download-btn';
+            downloadBtn.innerHTML = '⬇ Download';
+            downloadBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const filename = url.split('/').pop().split('?')[0] || 'image.jpg';
+                downloadFile(url, filename);
+            });
+            
+            item.appendChild(img);
+            item.appendChild(downloadBtn);
+            return item;
+        }
+
+        function updateI18n() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang] && translations[currentLang][key]) {
+                    el.textContent = translations[currentLang][key];
+                }
+            });
+        }
+
         loadGallery();
+
+        // ============================================================
+        //  FIND MY PHOTOS
+        // ============================================================
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadContent = document.getElementById('uploadContent');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const previewImage = document.getElementById('previewImage');
+        const removeBtn = document.getElementById('removeBtn');
+        const searchBtn = document.getElementById('searchBtn');
+        const loadingContainer = document.getElementById('loadingContainer');
+        const loadingText = document.getElementById('loadingText');
+        const progressBar = document.getElementById('progressBar');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const resultsCount = document.getElementById('resultsCount');
+        const resultsSubtitle = document.getElementById('resultsSubtitle');
+        const noResults = document.getElementById('noResults');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Drag & Drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                handleFile(files[0]);
+            }
+        });
+
+        uploadArea.addEventListener('click', () => {
+            if (!selectedFile) fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetUpload();
+        });
+
+        function handleFile(file) {
+            // Validate file size (max 10MB)
+            const maxSize = 10 * 1024 * 1024;
+            if (file.size > maxSize) {
+                showError('Image size exceeds 10MB limit. Please choose a smaller image.');
+                return;
+            }
+
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                uploadContent.classList.add('hidden');
+                uploadPreview.classList.add('show');
+                searchBtn.classList.add('active');
+                searchBtn.disabled = false;
+                hideAllResults();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetUpload() {
+            selectedFile = null;
+            fileInput.value = '';
+            uploadContent.classList.remove('hidden');
+            uploadPreview.classList.remove('show');
+            previewImage.src = '#';
+            searchBtn.classList.remove('active');
+            searchBtn.disabled = true;
+            hideAllResults();
+        }
+
+        function resetFindPhotos() {
+            resetUpload();
+            hideAllResults();
+            loadingContainer.style.display = 'none';
+            errorContainer.style.display = 'none';
+        }
+
+        function hideAllResults() {
+            resultsContainer.style.display = 'none';
+            noResults.style.display = 'none';
+            errorContainer.style.display = 'none';
+        }
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorContainer.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            noResults.style.display = 'none';
+            loadingContainer.style.display = 'none';
+        }
+
+        // Search
+        searchBtn.addEventListener('click', async () => {
+            if (!selectedFile || isSearching) return;
+
+            isSearching = true;
+            searchBtn.disabled = true;
+            searchBtn.textContent = '⏳ Processing...';
+            hideAllResults();
+            loadingContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            loadingText.textContent = 'Analyzing face...';
+
+            try {
+                // Simulate progress
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    progressBar.style.width = progress + '%';
+                }, 500);
+
+                // Send request
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+
+                const response = await fetch('/api/find-my-photos', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                loadingText.textContent = 'Processing results...';
+
+                const data = await response.json();
+
+                await new Promise(resolve => setTimeout(resolve, 500)); // Smooth transition
+
+                loadingContainer.style.display = 'none';
+
+                if (!data.success) {
+                    showError(data.message || 'An error occurred');
+                    return;
+                }
+
+                if (data.total_matches === 0) {
+                    noResults.style.display = 'block';
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
+
+                // Display results
+                resultsGrid.innerHTML = '';
+                data.matches.forEach(match => {
+                    const item = createGalleryItem(match.url, match.title, match.similarity);
+                    resultsGrid.appendChild(item);
+                });
+
+                resultsCount.textContent = `${data.total_matches} photo${data.total_matches > 1 ? 's' : ''}`;
+                resultsSubtitle.textContent = `Found with ${Math.round(data.threshold_used * 100)}% match threshold`;
+                resultsContainer.style.display = 'block';
+                noResults.style.display = 'none';
+
+            } catch (error) {
+                console.error('Search error:', error);
+                loadingContainer.style.display = 'none';
+                showError(error.message || 'Network error. Please try again.');
+            } finally {
+                isSearching = false;
+                searchBtn.disabled = false;
+                searchBtn.textContent = '🔍 Find My Photos';
+                progressBar.style.width = '0%';
+            }
+        });
+
+        // ============================================================
+        //  ADMIN: EXTRACT EMBEDDINGS (hidden feature)
+        // ============================================================
+        // يمكن تشغيل هذا من Console لتحديث قاعدة البيانات
+        // extractEmbeddings()
+        async function extractEmbeddings() {
+            try {
+                const token = localStorage.getItem('adminToken');
+                if (!token) {
+                    console.error('Please login first');
+                    return;
+                }
+                
+                const response = await fetch('/api/admin/extract-embeddings', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('Extraction result:', data);
+                alert(data.message || 'Embeddings extracted successfully!');
+            } catch (error) {
+                console.error('Extraction error:', error);
+                alert('Error extracting embeddings');
+            }
+        }
+
+        console.log('🕊️ Baptism Blessing Gallery loaded!');
+        console.log('📸 To extract face embeddings, run: extractEmbeddings()');
+        console.log('🔑 Make sure you are logged in as admin first.');
     </script>
 </body>
 </html>

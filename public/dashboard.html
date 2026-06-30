@@ -1065,19 +1065,19 @@
         }, 5000);
 
         // Verify token on load
-        fetch('/api/event', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        }).then(response => {
-            if (!response.ok) {
-                localStorage.removeItem('token');
-                window.location.href = '/login';
-            }
-        }).catch(() => {
-            localStorage.removeItem('token');
-            window.location.href = '/login';
-        });
+fetch('/api/gallery', {
+    headers: {
+        'Authorization': `Bearer ${token}`,
+    },
+}).then(response => {
+    if (!response.ok) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+    }
+}).catch(() => {
+    localStorage.removeItem('token');
+    window.location.href = '/login';
+});
     </script>
 </body>
 </html>

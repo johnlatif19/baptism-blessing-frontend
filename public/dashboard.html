@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baptism Blessing Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Cloudinary Upload Widget -->
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
         * {
             margin: 0;
@@ -516,6 +518,12 @@
             100% { transform: scale(1); }
         }
 
+        .cloudinary-btn {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1rem;
+        }
+
         @media (max-width: 768px) {
             .hamburger {
                 display: flex;
@@ -677,11 +685,11 @@
                     </svg>
                     <span data-i18n="dashboard.videoManagement">Video Management</span>
                 </h3>
-                <form id="videoForm" enctype="multipart/form-data">
+                <form id="videoForm">
                     <div class="form-group">
                         <label data-i18n="dashboard.videoFile">Upload Video</label>
-                        <input type="file" id="videoFile" accept="video/*" required>
-                        <div class="file-info" id="videoFileInfo" data-i18n="dashboard.videoFileInfo">Choose a video file (max 500MB)</div>
+                        <button type="button" class="btn btn-primary cloudinary-btn" id="cloudinaryUploadBtn">📤 Choose Video</button>
+                        <div class="file-info" id="videoFileInfo" data-i18n="dashboard.videoFileInfo">Click to upload (max 500MB)</div>
                     </div>
                     <div class="form-group">
                         <label data-i18n="dashboard.videoTitle">Title</label>
@@ -691,7 +699,7 @@
                         <label data-i18n="dashboard.videoDesc">Description</label>
                         <input type="text" id="videoDesc" data-i18n-placeholder="dashboard.videoDescPlaceholder" placeholder="Brief description">
                     </div>
-                    <button type="submit" class="btn btn-primary" id="videoUploadBtn" data-i18n="dashboard.uploadVideo">Upload Video</button>
+                    <div id="uploadStatus" style="margin-top: 0.5rem; display: none; color: var(--gold-dark); font-weight: 600; text-align: center;"></div>
                     <div class="progress-container" id="videoProgress">
                         <div class="progress-bar">
                             <div class="progress-fill" id="videoProgressFill"></div>
@@ -745,7 +753,7 @@
                 'dashboard.currentGallery': 'Current Gallery',
                 'dashboard.videoManagement': 'Video Management',
                 'dashboard.videoFile': 'Upload Video',
-                'dashboard.videoFileInfo': 'Choose a video file (max 500MB)',
+                'dashboard.videoFileInfo': 'Click to upload (max 500MB)',
                 'dashboard.videoTitle': 'Title',
                 'dashboard.videoTitlePlaceholder': 'Video title',
                 'dashboard.videoDesc': 'Description',
@@ -774,7 +782,7 @@
                 'dashboard.currentGallery': 'المعرض الحالي',
                 'dashboard.videoManagement': 'إدارة الفيديوهات',
                 'dashboard.videoFile': 'رفع فيديو',
-                'dashboard.videoFileInfo': 'اختر ملف فيديو (حد أقصى 500 ميجابايت)',
+                'dashboard.videoFileInfo': 'اضغط للرفع (حد أقصى 500 ميجابايت)',
                 'dashboard.videoTitle': 'العنوان',
                 'dashboard.videoTitlePlaceholder': 'عنوان الفيديو',
                 'dashboard.videoDesc': 'الوصف',
@@ -1124,109 +1132,109 @@
 
         loadVideos();
 
-        // Upload video with loading
-        document.getElementById('videoForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const fileInput = document.getElementById('videoFile');
-            const file = fileInput.files[0];
-            const title = document.getElementById('videoTitle').value;
-            const description = document.getElementById('videoDesc').value;
-            const btn = document.getElementById('videoUploadBtn');
+        // ==================== CLOUDINARY UPLOAD WIDGET ====================
+
+        // Cloudinary Upload
+        document.getElementById('cloudinaryUploadBtn').addEventListener('click', function() {
+            const cloudName = 'YOUR_CLOUDINARY_CLOUD_NAME'; // ضع اسم Cloudinary الخاص بك
+            const uploadPreset = 'baptism_upload'; // هتعمله في Cloudinary Dashboard
+            
+            const widget = cloudinary.createUploadWidget({
+                cloudName: cloudName,
+                uploadPreset: uploadPreset,
+                sources: ['local', 'url', 'camera'],
+                multiple: false,
+                maxFileSize: 500 * 1024 * 1024,
+                resourceType: 'video',
+                styles: {
+                    palette: {
+                        window: '#FFFFFF',
+                        sourceBg: '#FDF8F0',
+                        windowBorder: '#C9A96E',
+                        tabIcon: '#C9A96E',
+                        inactiveTabIcon: '#A67C52',
+                        menuIcons: '#C9A96E',
+                        link: '#C9A96E',
+                        action: '#C9A96E',
+                        inProgress: '#E8D5A3',
+                        complete: '#B8944A',
+                        error: '#e74c3c',
+                        textDark: '#2C1810',
+                        textLight: '#FFF9F5'
+                    }
+                }
+            }, function(error, result) {
+                if (!error && result && result.event === 'success') {
+                    const videoUrl = result.info.secure_url;
+                    const publicId = result.info.public_id;
+                    const title = document.getElementById('videoTitle').value || 'Video';
+                    const description = document.getElementById('videoDesc').value || '';
+                    
+                    // Save to Firestore via API (small payload)
+                    saveVideoToDatabase(videoUrl, publicId, title, description);
+                } else if (error) {
+                    showStatus(currentLang === 'ar' ? 'خطأ في رفع الفيديو. حاول مرة أخرى.' : 'Error uploading video. Please try again.', 'error');
+                }
+            });
+            widget.open();
+        });
+
+        async function saveVideoToDatabase(url, publicId, title, description) {
             const progressContainer = document.getElementById('videoProgress');
             const progressFill = document.getElementById('videoProgressFill');
             const progressText = document.getElementById('videoProgressText');
-
-            if (!file) {
-                showStatus(currentLang === 'ar' ? 'يرجى اختيار فيديو.' : 'Please select a video.', 'error');
-                return;
-            }
-
-            // Check file size (500MB max)
-            if (file.size > 500 * 1024 * 1024) {
-                showStatus(currentLang === 'ar' ? translations.ar['dashboard.videoTooLarge'] : translations.en['dashboard.videoTooLarge'], 'error');
-                return;
-            }
-
-            // Disable button and show loading
-            btn.disabled = true;
-            btn.classList.add('btn-loading');
+            const status = document.getElementById('uploadStatus');
+            
             progressContainer.classList.add('active');
-            progressFill.style.width = '0%';
-            progressText.textContent = currentLang === 'ar' ? 'جاري الرفع...' : 'Uploading...';
-
-            const formData = new FormData();
-            formData.append('video', file);
-            formData.append('title', title);
-            formData.append('description', description);
-
-            // Simulate progress for large files
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += Math.random() * 8;
-                if (progress > 90) progress = 90;
-                progressFill.style.width = progress + '%';
-                progressText.textContent = `${Math.round(progress)}%`;
-            }, 300);
-
+            progressFill.style.width = '50%';
+            progressText.textContent = currentLang === 'ar' ? 'جاري الحفظ في قاعدة البيانات...' : 'Saving to database...';
+            status.style.display = 'block';
+            status.textContent = currentLang === 'ar' ? 'جاري الحفظ...' : 'Saving...';
+            status.style.color = 'var(--gold-dark)';
+            
             try {
                 const response = await fetch('/api/video', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
-                    body: formData,
+                    body: JSON.stringify({ 
+                        url, 
+                        publicId, 
+                        title, 
+                        description 
+                    })
                 });
-
-                clearInterval(progressInterval);
-
+                
                 if (response.ok) {
                     progressFill.style.width = '100%';
                     progressText.textContent = currentLang === 'ar' ? '✅ تم الرفع بنجاح!' : '✅ Upload complete!';
+                    status.textContent = currentLang === 'ar' ? '✅ تم رفع الفيديو بنجاح!' : '✅ Video uploaded successfully!';
+                    status.style.color = '#28a745';
                     showStatus(currentLang === 'ar' ? 'تم رفع الفيديو بنجاح!' : 'Video uploaded successfully!');
-                    fileInput.value = '';
                     document.getElementById('videoTitle').value = '';
                     document.getElementById('videoDesc').value = '';
-                    document.getElementById('videoFileInfo').textContent = currentLang === 'ar' ? translations.ar['dashboard.videoFileInfo'] : translations.en['dashboard.videoFileInfo'];
-                    
-                    // Success animation
-                    btn.classList.remove('btn-loading');
-                    btn.classList.add('upload-success');
-                    setTimeout(() => btn.classList.remove('upload-success'), 500);
-                    
+                    loadVideos();
                     setTimeout(() => {
                         progressContainer.classList.remove('active');
                         progressFill.style.width = '0%';
-                    }, 1500);
-                    
-                    loadVideos();
+                        status.style.display = 'none';
+                    }, 3000);
                 } else {
                     const error = await response.json();
-                    showStatus(error.message || (currentLang === 'ar' ? 'فشل في رفع الفيديو.' : 'Failed to upload video.'), 'error');
+                    showStatus(error.message || (currentLang === 'ar' ? 'فشل في حفظ الفيديو في قاعدة البيانات.' : 'Failed to save video to database.'), 'error');
                     progressContainer.classList.remove('active');
+                    status.style.display = 'none';
                 }
             } catch (error) {
-                clearInterval(progressInterval);
                 showStatus(currentLang === 'ar' ? 'خطأ في الشبكة. يرجى المحاولة مرة أخرى.' : 'Network error. Please try again.', 'error');
                 progressContainer.classList.remove('active');
-            } finally {
-                btn.disabled = false;
-                btn.classList.remove('btn-loading');
+                status.style.display = 'none';
             }
-        });
+        }
 
-        document.getElementById('videoFile').addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const size = (file.size / (1024 * 1024)).toFixed(2);
-                const maxSize = 500;
-                document.getElementById('videoFileInfo').textContent = `${file.name} (${size} MB)`;
-                if (file.size > maxSize * 1024 * 1024) {
-                    document.getElementById('videoFileInfo').style.color = '#e74c3c';
-                } else {
-                    document.getElementById('videoFileInfo').style.color = 'var(--text-gold)';
-                }
-            }
-        });
+        // ==================== END CLOUDINARY UPLOAD WIDGET ====================
 
         // Generate QR Code
         document.getElementById('generateQRBtn').addEventListener('click', function() {

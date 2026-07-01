@@ -15,8 +15,6 @@ const { v4: uuidv4 } = require('uuid');
 
 // ==================== FACE DETECTION IMPORTS ====================
 const faceDetection = require('./server/faceDetection');
-// ملاحظة: قم بتنزيل النماذج مرة واحدة عند بدء التشغيل
-// يمكنك تشغيل: node server/downloadModels.js
 
 // ==================== INITIALIZATION ====================
 
@@ -96,7 +94,7 @@ app.use(cors({
 // Compression
 app.use(compression());
 
-// JSON and URL encoded - زودنا لـ 500MB
+// JSON and URL encoded
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 
@@ -135,7 +133,6 @@ const upload = multer({
     fileSize: 500 * 1024 * 1024 // 500MB for videos
   },
   fileFilter: (req, file, cb) => {
-    // Allow images and videos
     const allowedTypes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
       'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/webm'
@@ -202,7 +199,6 @@ app.post('/api/login', [
   const { username, password, rememberMe } = req.body;
 
   try {
-    // Check if user exists in Firestore
     const userSnapshot = await db.collection('users')
       .where('username', '==', username)
       .limit(1)
@@ -216,10 +212,8 @@ app.post('/api/login', [
       userData = userSnapshot.docs[0].data();
     }
 
-    // If no user found, check hardcoded admin from .env
     if (!userData) {
       if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        // Create admin user in database if not exists
         const adminCheck = await db.collection('users')
           .where('username', '==', ADMIN_USERNAME)
           .limit(1)
@@ -251,13 +245,11 @@ app.post('/api/login', [
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
-    // Verify password
     const isValidPassword = await bcrypt.compare(password, userData.password);
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
-    // Generate token
     const token = jwt.sign(
       { username: userData.username, role: userData.role || 'admin' },
       JWT_SECRET,
@@ -399,7 +391,7 @@ app.get('/api/videos', async (req, res) => {
   }
 });
 
-// POST upload video with extended timeout
+// POST upload video
 app.post('/api/video', authenticateToken, [
     body('url').isURL().withMessage('Valid URL is required'),
     body('publicId').optional().isString(),
@@ -465,10 +457,8 @@ app.post('/api/search-face', upload.single('image'), async (req, res) => {
   }
 
   try {
-    // Load models if not already loaded
     await faceDetection.loadModels();
     
-    // Detect faces and generate embeddings from the uploaded image
     const faceData = await faceDetection.detectFacesAndEmbeddings(req.file.buffer);
     
     if (!faceData || faceData.length === 0) {
@@ -478,12 +468,10 @@ app.post('/api/search-face', upload.single('image'), async (req, res) => {
       });
     }
 
-    // Get all gallery images with face data from Firestore
     const gallerySnapshot = await db.collection('gallery')
       .where('faces', '!=', null)
       .get();
     
-    // Collect all embeddings from all images
     const allStoredEmbeddings = [];
     const imageMap = {};
     
@@ -514,12 +502,9 @@ app.post('/api/search-face', upload.single('image'), async (req, res) => {
       }
     });
 
-    // Get threshold from query parameter or use default
     const threshold = parseFloat(req.query.threshold) || 0.5;
     const normalizedThreshold = Math.max(0, Math.min(1, threshold));
 
-    // Compare query embedding against all stored embeddings
-    // Use the first detected face for comparison
     const queryEmbedding = faceData[0].embedding;
     const matches = faceDetection.compareEmbeddings(
       queryEmbedding,
@@ -527,7 +512,6 @@ app.post('/api/search-face', upload.single('image'), async (req, res) => {
       normalizedThreshold
     );
 
-    // Group matches by image ID to avoid duplicates
     const imageMatches = {};
     for (const match of matches) {
       if (!imageMatches[match.imageId] || match.similarity > imageMatches[match.imageId].similarity) {
@@ -538,7 +522,6 @@ app.post('/api/search-face', upload.single('image'), async (req, res) => {
       }
     }
 
-    // Convert to array and sort by similarity
     const resultMatches = Object.values(imageMatches)
       .sort((a, b) => b.similarity - a.similarity);
 
@@ -591,17 +574,14 @@ app.post('/api/gallery/:id/faces', authenticateToken, async (req, res) => {
       return res.status(400).json({ message: 'Image URL not found' });
     }
 
-    // Download image from Cloudinary
     const response = await fetch(imageData.url);
     const buffer = Buffer.from(await response.arrayBuffer());
 
-    // Detect faces and generate embeddings
     const faceData = await faceDetection.extractFaceEmbeddings(buffer, {
       title: imageData.title || 'Image',
       url: imageData.url
     });
 
-    // Update document with face embeddings
     await db.collection('gallery').doc(id).update({
       faces: faceData.map(face => ({
         embedding: face.embedding,
@@ -632,7 +612,7 @@ app.post('/api/gallery/batch-process-faces', authenticateToken, async (req, res)
   try {
     const snapshot = await db.collection('gallery')
       .where('faces', '==', null)
-      .limit(50) // Process in batches
+      .limit(50)
       .get();
 
     if (snapshot.empty) {
@@ -649,17 +629,14 @@ app.post('/api/gallery/batch-process-faces', authenticateToken, async (req, res)
         const data = doc.data();
         if (!data.url) continue;
 
-        // Download image
         const response = await fetch(data.url);
         const buffer = Buffer.from(await response.arrayBuffer());
 
-        // Detect faces
         const faceData = await faceDetection.extractFaceEmbeddings(buffer, {
           title: data.title || 'Image',
           url: data.url
         });
 
-        // Update document
         await db.collection('gallery').doc(doc.id).update({
           faces: faceData.map(face => ({
             embedding: face.embedding,
@@ -702,27 +679,22 @@ app.post('/api/gallery/batch-process-faces', authenticateToken, async (req, res)
 
 // ==================== HTML ROUTES (Clean URLs) ====================
 
-// Serve index.html for root
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve login.html for /login
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Serve dashboard.html for /dashboard
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Serve gallery.html for /gallery
 app.get('/gallery', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
 });
 
-// Serve videos.html for /videos
 app.get('/videos', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'videos.html'));
 });
@@ -749,7 +721,6 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error('Server Error:', err);
   
-  // Multer error handling
   if (err instanceof multer.MulterError) {
     if (err.code === 'FILE_TOO_LARGE') {
       return res.status(413).json({ message: 'File too large. Maximum size is 500MB' });
@@ -757,7 +728,6 @@ app.use((err, req, res, next) => {
     return res.status(400).json({ message: err.message });
   }
 
-  // JWT error handling
   if (err.name === 'JsonWebTokenError') {
     return res.status(403).json({ message: 'Invalid token' });
   }
@@ -766,7 +736,6 @@ app.use((err, req, res, next) => {
     return res.status(403).json({ message: 'Token expired' });
   }
 
-  // Default error
   res.status(500).json({ 
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
@@ -800,8 +769,8 @@ app.listen(PORT, () => {
   console.log('⏱️  Cloudinary timeout: 10 minutes');
   console.log('=================================');
   console.log('👤 Face Detection:');
-  console.log(`   Status: ${faceDetection ? 'Enabled ✅' : 'Disabled ❌'}`);
-  console.log(`   Models: ${faceDetection ? 'Will load on first request' : 'N/A'}`);
+  console.log(`   Status: Enabled ✅`);
+  console.log(`   Models: Will load on first request`);
   console.log('=================================');
 });
 

@@ -1,13 +1,11 @@
 // ==================== MODEL DOWNLOAD SCRIPT ====================
 // This script downloads the face-api.js models for local use
 // Run this once before starting the server
+// Command: npm run download-models
 
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
-const { promisify } = require('util');
-const stream = require('stream');
-const pipeline = promisify(stream.pipeline);
 
 const MODELS_DIR = path.join(__dirname, '../models');
 const MODEL_FILES = [
@@ -48,7 +46,7 @@ const MODEL_FILES = [
 /**
  * Download a file from URL to local path
  */
-async function downloadFile(url, filePath) {
+function downloadFile(url, filePath) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(filePath);
     https.get(url, (response) => {
@@ -70,12 +68,18 @@ async function downloadFile(url, filePath) {
  * Download all face-api.js models
  */
 async function downloadModels() {
+  console.log('=========================================');
   console.log('🔄 Downloading face-api.js models...');
+  console.log('=========================================');
   
   // Create models directory if it doesn't exist
   if (!fs.existsSync(MODELS_DIR)) {
     fs.mkdirSync(MODELS_DIR, { recursive: true });
+    console.log(`📁 Created models directory: ${MODELS_DIR}`);
   }
+  
+  let successCount = 0;
+  let failCount = 0;
   
   for (const model of MODEL_FILES) {
     const filePath = path.join(MODELS_DIR, model.name);
@@ -84,19 +88,32 @@ async function downloadModels() {
       // Check if file already exists
       if (fs.existsSync(filePath)) {
         console.log(`✅ ${model.name} already exists, skipping...`);
+        successCount++;
         continue;
       }
       
-      console.log(`⬇️ Downloading ${model.name}...`);
+      console.log(`⬇️  Downloading ${model.name}...`);
       await downloadFile(model.url, filePath);
       console.log(`✅ Downloaded ${model.name}`);
+      successCount++;
     } catch (error) {
       console.error(`❌ Error downloading ${model.name}:`, error.message);
+      failCount++;
     }
   }
   
-  console.log('✅ All models downloaded successfully!');
+  console.log('=========================================');
+  console.log(`✅ Successfully downloaded: ${successCount} files`);
+  if (failCount > 0) {
+    console.log(`❌ Failed to download: ${failCount} files`);
+    console.log('💡 Please try running the script again');
+  } else {
+    console.log('✅ All models downloaded successfully!');
+  }
   console.log(`📁 Models saved to: ${MODELS_DIR}`);
+  console.log('=========================================');
+  console.log('🚀 You can now start the server: npm start');
+  console.log('=========================================');
 }
 
 // Run the download if this script is executed directly

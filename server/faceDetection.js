@@ -27,7 +27,6 @@ async function loadModels() {
     console.log('🔄 Loading face detection models...');
     
     // Load models from the specified path
-    // The models will be downloaded automatically by face-api.js
     await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_PATH);

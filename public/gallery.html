@@ -6,7 +6,6 @@
     <title>Baptism Blessing | Photo Gallery</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* ===== EXISTING STYLES RETAINED ===== */
         * {
             margin: 0;
             padding: 0;
@@ -119,7 +118,7 @@
             gap: 1rem;
         }
 
-        .theme-toggle, .lang-toggle, .face-search-btn, .show-all-btn {
+        .theme-toggle, .lang-toggle {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 50px;
@@ -134,7 +133,7 @@
             gap: 0.5rem;
         }
 
-        .theme-toggle:hover, .lang-toggle:hover, .face-search-btn:hover, .show-all-btn:hover {
+        .theme-toggle:hover, .lang-toggle:hover {
             background: var(--gold);
             color: white;
             border-color: var(--gold);
@@ -143,34 +142,6 @@
         .theme-toggle svg, .lang-toggle svg {
             width: 18px;
             height: 18px;
-        }
-
-        .face-search-btn {
-            background: var(--gold);
-            color: var(--text-dark);
-            border-color: var(--gold);
-        }
-
-        .face-search-btn:hover {
-            background: var(--gold-dark);
-            border-color: var(--gold-dark);
-            color: white;
-        }
-
-        .face-search-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .show-all-btn {
-            background: var(--bg-card);
-            border-color: var(--border-color);
-        }
-
-        .show-all-btn:hover {
-            background: var(--gold);
-            color: white;
-            border-color: var(--gold);
         }
 
         .back-btn {
@@ -211,51 +182,6 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-        }
-
-        .gallery-controls {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .search-status {
-            text-align: center;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            display: none;
-            transition: var(--transition);
-        }
-
-        .search-status.active {
-            display: block;
-        }
-
-        .search-status .spinner {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 3px solid var(--border-color);
-            border-top: 3px solid var(--gold);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 12px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .search-status .result-count {
-            font-weight: 600;
-            color: var(--gold-dark);
         }
 
         .gallery-grid {
@@ -320,25 +246,6 @@
         .gallery-item .download-btn:hover {
             background: var(--gold);
             color: var(--text-dark);
-        }
-
-        .gallery-item .match-badge {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            background: var(--gold);
-            color: var(--text-dark);
-            padding: 0.3rem 0.8rem;
-            border-radius: 50px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            opacity: 0;
-            transition: var(--transition);
-            z-index: 10;
-        }
-
-        .gallery-item .match-badge.show {
-            opacity: 1;
         }
 
         .empty-gallery {
@@ -500,15 +407,6 @@
                 padding: 0.5rem 1.2rem;
                 font-size: 0.8rem;
             }
-
-            .gallery-controls {
-                gap: 0.5rem;
-            }
-
-            .face-search-btn, .show-all-btn {
-                padding: 0.4rem 0.8rem;
-                font-size: 0.8rem;
-            }
         }
     </style>
 </head>
@@ -523,14 +421,6 @@
             <span class="nav-logo-text">Baptism Blessing</span>
         </a>
         <div class="nav-controls">
-            <button class="face-search-btn" id="faceSearchBtn" aria-label="Search by face">
-                <span>🔍</span>
-                <span data-i18n="face.search">Search by Face</span>
-            </button>
-            <button class="show-all-btn" id="showAllBtn" aria-label="Show all images" style="display:none;">
-                <span>📷</span>
-                <span data-i18n="face.showAll">Show All</span>
-            </button>
             <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="5"/>
@@ -559,12 +449,6 @@
 
     <main class="main-content">
         <h1 class="page-title"><span data-i18n="photo.title">Photo</span> <span class="gold" data-i18n="photo.gallery">Gallery</span></h1>
-        
-        <div class="search-status" id="searchStatus">
-            <span class="spinner"></span>
-            <span id="searchStatusText" data-i18n="face.searching">Searching for faces...</span>
-        </div>
-
         <div class="gallery-grid" id="galleryGrid">
             <!-- Gallery images will be loaded here -->
         </div>
@@ -583,44 +467,26 @@
     </footer>
 
     <script>
-        // ==================== TRANSLATIONS ====================
+        // Theme and Language management
         const translations = {
             en: {
                 'photo.title': 'Photo',
                 'photo.gallery': 'Gallery',
                 'photo.empty': 'No photos yet',
                 'photo.emptySub': 'Photos will be added after the baptism ceremony',
-                'face.search': 'Search by Face',
-                'face.showAll': 'Show All',
-                'face.searching': 'Searching for faces...',
-                'face.searchingStatus': 'Searching for similar faces...',
-                'face.noResults': 'No matching faces found',
-                'face.found': 'found matching faces',
-                'face.error': 'Error during face search'
             },
             ar: {
                 'photo.title': 'معرض',
                 'photo.gallery': 'الصور',
                 'photo.empty': 'لا توجد صور بعد',
                 'photo.emptySub': 'سيتم إضافة الصور بعد حفل المعمودية',
-                'face.search': 'بحث بالوجه',
-                'face.showAll': 'عرض الكل',
-                'face.searching': 'جاري البحث عن الوجوه...',
-                'face.searchingStatus': 'جاري البحث عن وجوه مشابهة...',
-                'face.noResults': 'لم يتم العثور على وجوه مطابقة',
-                'face.found': 'تم العثور على وجوه مطابقة',
-                'face.error': 'حدث خطأ أثناء البحث بالوجه'
             }
         };
 
-        // ==================== STATE MANAGEMENT ====================
         let currentLang = 'en';
         let currentTheme = 'light';
         let currentImageUrl = '';
-        let allImages = [];
-        let isSearchMode = false;
 
-        // ==================== THEME & LANGUAGE ====================
         function setTheme(theme) {
             currentTheme = theme;
             document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
@@ -681,24 +547,27 @@
         setTheme(savedTheme);
         setLanguage(savedLang);
 
-        // ==================== UTILITY FUNCTIONS ====================
+        // Download function
         function downloadFile(url, filename) {
+            // Use fetch to get the file as blob
             fetch(url)
                 .then(response => response.blob())
                 .then(blob => {
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
-                    link.download = filename || url.split('/').pop().split('?')[0] || 'download';
+                    link.download = filename || url.split('/').pop() || 'download';
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                     URL.revokeObjectURL(link.href);
                 })
-                .catch(() => {
+                .catch(err => {
+                    // Fallback: open in new tab
                     window.open(url, '_blank');
                 });
         }
 
+        // Lightbox functions
         function openLightbox(src) {
             currentImageUrl = src;
             document.getElementById('lightboxImage').src = src;
@@ -720,6 +589,7 @@
             if (e.key === 'Escape') closeLightbox();
         });
 
+        // Download from lightbox
         document.getElementById('lightboxDownload').addEventListener('click', function() {
             if (currentImageUrl) {
                 const filename = currentImageUrl.split('/').pop().split('?')[0] || 'image.jpg';
@@ -727,189 +597,73 @@
             }
         });
 
-        // ==================== RENDER GALLERY ====================
-        function renderGallery(images) {
-            const grid = document.getElementById('galleryGrid');
-            
-            if (!images || images.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-gallery">
-                        <div class="icon">${isSearchMode ? '🔍' : '📸'}</div>
-                        <h3>${isSearchMode ? 'No matching faces found' : 'No photos yet'}</h3>
-                        <p>${isSearchMode ? 'Try uploading a different photo with a face' : 'Photos will be added after the baptism ceremony'}</p>
-                    </div>
-                `;
-                return;
-            }
-
-            grid.innerHTML = '';
-            images.forEach(img => {
-                const item = document.createElement('div');
-                item.className = 'gallery-item';
-                
-                const imgEl = document.createElement('img');
-                imgEl.src = img.url;
-                imgEl.alt = img.title || 'Gallery image';
-                imgEl.loading = 'lazy';
-                imgEl.addEventListener('click', function(e) {
-                    if (!e.target.closest('.download-btn') && !e.target.closest('.match-badge')) {
-                        openLightbox(img.url);
-                    }
-                });
-                
-                // Match badge for search results
-                if (isSearchMode && img.similarity) {
-                    const badge = document.createElement('div');
-                    badge.className = 'match-badge show';
-                    badge.textContent = `${Math.round(img.similarity * 100)}% match`;
-                    item.appendChild(badge);
-                }
-                
-                const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'download-btn';
-                downloadBtn.innerHTML = '⬇ Download';
-                downloadBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const filename = img.url.split('/').pop().split('?')[0] || 'image.jpg';
-                    downloadFile(img.url, filename);
-                });
-                
-                item.appendChild(imgEl);
-                item.appendChild(downloadBtn);
-                grid.appendChild(item);
-            });
-        }
-
-        // ==================== LOAD GALLERY ====================
+        // Load gallery images
         async function loadGallery() {
             try {
                 const response = await fetch('/api/gallery');
                 if (response.ok) {
                     const images = await response.json();
-                    allImages = images;
-                    isSearchMode = false;
-                    document.getElementById('showAllBtn').style.display = 'none';
-                    renderGallery(images);
+                    const grid = document.getElementById('galleryGrid');
+                    
+                    if (images && images.length > 0) {
+                        grid.innerHTML = '';
+                        images.forEach(img => {
+                            const item = document.createElement('div');
+                            item.className = 'gallery-item';
+                            
+                            const imgEl = document.createElement('img');
+                            imgEl.src = img.url;
+                            imgEl.alt = img.title || 'Gallery image';
+                            imgEl.loading = 'lazy';
+                            imgEl.addEventListener('click', function(e) {
+                                if (!e.target.closest('.download-btn')) {
+                                    openLightbox(img.url);
+                                }
+                            });
+                            
+                            const downloadBtn = document.createElement('button');
+                            downloadBtn.className = 'download-btn';
+                            downloadBtn.innerHTML = '⬇ Download';
+                            downloadBtn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const filename = img.url.split('/').pop().split('?')[0] || 'image.jpg';
+                                downloadFile(img.url, filename);
+                            });
+                            
+                            item.appendChild(imgEl);
+                            item.appendChild(downloadBtn);
+                            grid.appendChild(item);
+                        });
+                    } else {
+                        grid.innerHTML = `
+                            <div class="empty-gallery">
+                                <div class="icon">📸</div>
+                                <h3 data-i18n="photo.empty">No photos yet</h3>
+                                <p data-i18n="photo.emptySub">Photos will be added after the baptism ceremony</p>
+                            </div>
+                        `;
+                        document.querySelectorAll('[data-i18n]').forEach(el => {
+                            const key = el.getAttribute('data-i18n');
+                            if (translations[currentLang] && translations[currentLang][key]) {
+                                el.textContent = translations[currentLang][key];
+                            }
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error loading gallery:', error);
-                renderGallery([]);
+                const grid = document.getElementById('galleryGrid');
+                grid.innerHTML = `
+                    <div class="empty-gallery">
+                        <div class="icon">📸</div>
+                        <h3 data-i18n="photo.empty">No photos yet</h3>
+                        <p data-i18n="photo.emptySub">Photos will be added after the baptism ceremony</p>
+                    </div>
+                `;
             }
         }
 
-        // ==================== FACE SEARCH ====================
-        function showSearchStatus(message, isLoading = true) {
-            const status = document.getElementById('searchStatus');
-            const text = document.getElementById('searchStatusText');
-            status.classList.add('active');
-            if (isLoading) {
-                text.innerHTML = `<span class="spinner"></span> ${message}`;
-            } else {
-                text.textContent = message;
-            }
-        }
-
-        function hideSearchStatus() {
-            document.getElementById('searchStatus').classList.remove('active');
-        }
-
-        async function performFaceSearch(file) {
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-                showSearchStatus(translations[currentLang]['face.searchingStatus'] || 'Searching for similar faces...');
-                
-                const response = await fetch('/api/search-face?threshold=0.5', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'Face search failed');
-                }
-
-                hideSearchStatus();
-
-                if (data.matches && data.matches.length > 0) {
-                    isSearchMode = true;
-                    document.getElementById('showAllBtn').style.display = 'flex';
-                    
-                    // Show result count
-                    const countMessage = `${data.matches.length} ${translations[currentLang]['face.found'] || 'matching faces found'}`;
-                    showSearchStatus(countMessage, false);
-                    
-                    // Render matches
-                    renderGallery(data.matches.map(match => ({
-                        ...match.image,
-                        similarity: match.similarity
-                    })));
-                } else {
-                    isSearchMode = true;
-                    document.getElementById('showAllBtn').style.display = 'flex';
-                    showSearchStatus(translations[currentLang]['face.noResults'] || 'No matching faces found', false);
-                    renderGallery([]);
-                }
-
-            } catch (error) {
-                console.error('Face search error:', error);
-                hideSearchStatus();
-                showSearchStatus(translations[currentLang]['face.error'] || 'Error during face search', false);
-                
-                // Show error for a few seconds then revert
-                setTimeout(() => {
-                    hideSearchStatus();
-                    if (isSearchMode) {
-                        // If in search mode, show the no results message
-                        showSearchStatus(translations[currentLang]['face.noResults'] || 'No matching faces found', false);
-                    }
-                }, 3000);
-            }
-        }
-
-        // ==================== EVENT LISTENERS ====================
-        // Face Search Button
-        document.getElementById('faceSearchBtn').addEventListener('click', function() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            
-            input.onchange = function(e) {
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];
-                    performFaceSearch(file);
-                }
-            };
-            
-            input.click();
-        });
-
-        // Show All Button
-        document.getElementById('showAllBtn').addEventListener('click', function() {
-            isSearchMode = false;
-            this.style.display = 'none';
-            hideSearchStatus();
-            renderGallery(allImages);
-        });
-
-        // ==================== INIT ====================
         loadGallery();
-
-        // Check face detection status on load
-        async function checkFaceDetectionStatus() {
-            try {
-                const response = await fetch('/api/face-detection-status');
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Face detection status:', data.status);
-                }
-            } catch (error) {
-                console.warn('Face detection status check failed:', error);
-            }
-        }
-        checkFaceDetectionStatus();
     </script>
 </body>
 </html>

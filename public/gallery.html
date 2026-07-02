@@ -473,12 +473,22 @@
             color: white;
         }
 
-        /* Floating Search Button */
-        .floating-search-btn {
+        /* Floating Search Button Container */
+        .floating-search-container {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
             z-index: 999;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .floating-search-container.active {
+            display: flex;
+        }
+
+        .floating-search-btn {
             background: linear-gradient(135deg, var(--gold-dark), var(--gold));
             color: white;
             border: none;
@@ -490,7 +500,7 @@
             cursor: pointer;
             box-shadow: 0 8px 30px rgba(201, 169, 110, 0.4);
             transition: all 0.3s ease;
-            display: none;
+            display: flex;
             align-items: center;
             gap: 0.75rem;
         }
@@ -504,7 +514,28 @@
             font-size: 1.5rem;
         }
 
-        .floating-search-btn.active {
+        .floating-clear-btn {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-clear-btn:hover {
+            background: #e74c3c;
+            transform: rotate(90deg);
+        }
+
+        .floating-clear-btn.visible {
             display: flex;
         }
 
@@ -650,12 +681,22 @@
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
 
-            .floating-search-btn {
+            .floating-search-container {
                 bottom: 1.5rem;
                 right: 1.5rem;
+                gap: 0.4rem;
+            }
+
+            .floating-search-btn {
                 padding: 0.8rem 1.5rem;
                 font-size: 0.9rem;
                 border-radius: 50px;
+            }
+
+            .floating-clear-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.2rem;
             }
         }
     </style>
@@ -738,11 +779,16 @@
         <button class="lightbox-download" id="lightboxDownload">⬇ Download</button>
     </div>
 
-    <!-- Floating Search Button -->
-    <button class="floating-search-btn" id="floatingSearchBtn">
-        <span class="icon">🔍</span>
-        <span>Find My Photos</span>
-    </button>
+    <!-- Floating Search Container -->
+    <div class="floating-search-container" id="floatingSearchContainer">
+        <button class="floating-search-btn" id="floatingSearchBtn">
+            <span class="icon">🔍</span>
+            <span>Find My Photos</span>
+        </button>
+        <button class="floating-clear-btn" id="floatingClearBtn" title="Clear selected photo">
+            ✕
+        </button>
+    </div>
 
     <footer class="footer">
         <div class="footer-logo">Baptism Blessing</div>
@@ -1012,9 +1058,10 @@
                 }
                 
                 // Load face-api models from CDN with correct path
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/model');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/model');
-                await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/model');
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
                 
                 // Read the image using canvas
                 const img = await faceapi.bufferToImage(await imageFile.arrayBuffer());
@@ -1095,6 +1142,7 @@
             }
         });
 
+        // Show clear button when a photo is selected
         function handleFileSelect(file) {
             // Validate file size (max 10MB)
             if (file.size > 10 * 1024 * 1024) {
@@ -1115,6 +1163,7 @@
                 document.getElementById('searchBtn').style.display = 'inline-block';
                 document.getElementById('resetSearchBtn').style.display = 'none';
                 document.getElementById('searchResults').style.display = 'none';
+                floatingClearBtn.classList.add('visible');
             };
             reader.readAsDataURL(file);
         }
@@ -1143,13 +1192,16 @@
             document.getElementById('searchResultsGrid').innerHTML = '';
             document.getElementById('resultStats').innerHTML = '';
             searchActive = false;
+            floatingClearBtn.classList.remove('visible');
             
             // Scroll back to top
             document.querySelector('.search-section').scrollIntoView({ behavior: 'smooth' });
         });
 
         // ==================== FLOATING SEARCH BUTTON ====================
+        const floatingContainer = document.getElementById('floatingSearchContainer');
         const floatingBtn = document.getElementById('floatingSearchBtn');
+        const floatingClearBtn = document.getElementById('floatingClearBtn');
 
         // Show floating button when search section is out of view
         window.addEventListener('scroll', function() {
@@ -1157,9 +1209,9 @@
             if (searchSection) {
                 const rect = searchSection.getBoundingClientRect();
                 if (rect.bottom < 0) {
-                    floatingBtn.classList.add('active');
+                    floatingContainer.classList.add('active');
                 } else {
-                    floatingBtn.classList.remove('active');
+                    floatingContainer.classList.remove('active');
                 }
             }
         });
@@ -1170,6 +1222,28 @@
                 behavior: 'smooth', 
                 block: 'start' 
             });
+        });
+
+        // Clear selected photo
+        floatingClearBtn.addEventListener('click', function() {
+            // Reset everything
+            selectedFile = null;
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchPreview').style.display = 'none';
+            document.getElementById('searchPreview').src = '';
+            document.querySelector('.search-upload-area .icon').style.display = 'block';
+            document.querySelector('.search-upload-area .upload-text').style.display = 'block';
+            document.querySelector('.search-upload-area .upload-subtext').style.display = 'block';
+            document.getElementById('searchBtn').style.display = 'none';
+            document.getElementById('resetSearchBtn').style.display = 'none';
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('searchResultsGrid').innerHTML = '';
+            document.getElementById('resultStats').innerHTML = '';
+            floatingClearBtn.classList.remove('visible');
+            searchActive = false;
+            
+            // Scroll to search section
+            document.querySelector('.search-section').scrollIntoView({ behavior: 'smooth' });
         });
 
         // Load gallery images

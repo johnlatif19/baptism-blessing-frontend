@@ -839,8 +839,6 @@
         let currentLang = 'en';
         let currentTheme = 'light';
         let token = null;
-        let uploadQueue = [];
-        let isUploading = false;
 
         // Theme management
         function setTheme(theme) {
@@ -951,7 +949,7 @@
             el.className = 'status-msg ' + type;
             setTimeout(() => {
                 el.className = 'status-msg';
-            }, 5000);
+            }, 8000);
         }
 
         // ==================== MULTIPLE GALLERY IMAGES ====================
@@ -974,7 +972,7 @@
             fileCount.textContent = files.length > 0 ? `${files.length} ${imgLabel}${files.length > 1 ? 's' : ''} ${currentLang === 'ar' ? 'محددة' : 'selected'}` : '';
         });
 
-        // Upload multiple images
+        // Upload multiple images - النسخة المعدلة
         document.getElementById('galleryForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const fileInput = document.getElementById('galleryFile');
@@ -998,6 +996,7 @@
             statusContainer.innerHTML = '';
 
             let uploaded = 0;
+            let failed = 0;
             const total = files.length;
 
             for (let i = 0; i < files.length; i++) {
@@ -1019,6 +1018,10 @@
                 statusContainer.appendChild(statusItem);
 
                 try {
+                    const token = localStorage.getItem('token');
+                    
+                    console.log(`📤 Uploading: ${files[i].name}, Size: ${(files[i].size / 1024).toFixed(2)} KB`);
+                    
                     const response = await fetch(`${API_URL}/api/gallery`, {
                         method: 'POST',
                         headers: {
@@ -1028,15 +1031,41 @@
                     });
 
                     const statusEl = document.getElementById(`gallery-status-${i}`);
+                    
+                    let responseData;
+                    try {
+                        responseData = await response.json();
+                    } catch (e) {
+                        responseData = { message: 'Invalid response from server' };
+                    }
+                    
                     if (response.ok) {
                         uploaded++;
                         statusEl.innerHTML = `<span>${files[i].name}</span> <span class="status-icon">✅</span>`;
+                        console.log(`✅ Upload successful: ${files[i].name}`);
                     } else {
+                        failed++;
                         statusEl.innerHTML = `<span>${files[i].name}</span> <span class="status-icon">❌</span>`;
+                        console.error(`❌ Upload failed: ${files[i].name}`, response.status, responseData);
+                        
+                        const errorMsg = responseData.message || responseData.error || `HTTP ${response.status}`;
+                        statusEl.title = errorMsg;
+                        
+                        if (response.status === 401 || response.status === 403) {
+                            showStatus(currentLang === 'ar' ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' : 'Session expired. Please login again.', 'error');
+                            setTimeout(() => {
+                                localStorage.removeItem('token');
+                                window.location.href = '/login';
+                            }, 2000);
+                            return;
+                        }
                     }
                 } catch (error) {
+                    failed++;
+                    console.error(`❌ Network error uploading ${files[i].name}:`, error);
                     const statusEl = document.getElementById(`gallery-status-${i}`);
                     statusEl.innerHTML = `<span>${files[i].name}</span> <span class="status-icon">❌</span>`;
+                    statusEl.title = error.message || 'Network error';
                 }
             }
 
@@ -1044,9 +1073,9 @@
             progressText.textContent = currentLang === 'ar' ? '✅ تم الرفع بنجاح!' : '✅ Upload complete!';
             
             const successMsg = currentLang === 'ar' 
-                ? `تم رفع ${uploaded} من ${total} صورة بنجاح.`
-                : `Uploaded ${uploaded} of ${total} images successfully.`;
-            showStatus(successMsg);
+                ? `تم رفع ${uploaded} من ${total} صورة بنجاح.${failed > 0 ? ` فشل رفع ${failed} صورة.` : ''}`
+                : `Uploaded ${uploaded} of ${total} images successfully.${failed > 0 ? ` Failed to upload ${failed} images.` : ''}`;
+            showStatus(successMsg, failed > 0 ? 'error' : 'success');
             
             btn.disabled = false;
             btn.classList.remove('btn-loading');
@@ -1055,12 +1084,15 @@
                 progressContainer.classList.remove('active');
                 progressFill.style.width = '0%';
                 statusContainer.innerHTML = '';
-            }, 3000);
+            }, 5000);
 
             fileInput.value = '';
             document.getElementById('galleryFileList').innerHTML = '';
             document.getElementById('galleryFileCount').textContent = '';
-            loadGallery();
+            
+            if (uploaded > 0) {
+                loadGallery();
+            }
         });
 
         // Load gallery
@@ -1193,19 +1225,16 @@
                 }
             }, function(error, result) {
                 if (!error && result && result.event === 'success') {
-                    // Handle each uploaded video
                     const videoInfo = result.info;
                     const videoUrl = videoInfo.secure_url;
                     const publicId = videoInfo.public_id;
                     
-                    // Show upload status
                     const statusContainer = document.getElementById('videoUploadList');
                     const statusItem = document.createElement('div');
                     statusItem.className = 'upload-status-item';
                     statusItem.innerHTML = `<span>${videoInfo.original_filename || 'Video'}</span> <span class="status-icon">⏳</span>`;
                     statusContainer.appendChild(statusItem);
                     
-                    // Save to database
                     saveVideoToDatabase(videoUrl, publicId, videoInfo.original_filename || 'Video', '');
                 } else if (error) {
                     showStatus(currentLang === 'ar' ? 'خطأ في رفع الفيديوهات. حاول مرة أخرى.' : 'Error uploading videos. Please try again.', 'error');
@@ -1242,7 +1271,6 @@
                     })
                 });
                 
-                // Update progress
                 videoUploadCount++;
                 const progress = Math.min((videoUploadCount / videoTotalCount) * 100, 100);
                 progressFill.style.width = progress + '%';
@@ -1250,7 +1278,6 @@
                     ? `جاري رفع ${videoUploadCount} من ${videoTotalCount}`
                     : `Uploading ${videoUploadCount} of ${videoTotalCount}`;
                 
-                // Update status for this video
                 const items = statusContainer.querySelectorAll('.upload-status-item');
                 const lastItem = items[items.length - 1];
                 if (lastItem) {
@@ -1282,7 +1309,6 @@
                 }
             }
             
-            // Check if all videos are uploaded
             if (videoUploadCount >= videoTotalCount) {
                 progressFill.style.width = '100%';
                 progressText.textContent = currentLang === 'ar' ? '✅ تم رفع جميع الفيديوهات!' : '✅ All videos uploaded!';
@@ -1297,8 +1323,6 @@
             }
         }
 
-        // Override the widget open to track total videos
-        const originalOpen = document.getElementById('cloudinaryUploadBtn').click;
         document.getElementById('cloudinaryUploadBtn').addEventListener('click', function() {
             videoUploadCount = 0;
             videoTotalCount = 0;
@@ -1376,7 +1400,6 @@
 
         // ==================== QR CODE AND COPY LINK ====================
 
-        // Generate QR Code
         document.getElementById('generateQRBtn').addEventListener('click', function() {
             const container = document.getElementById('qrContainer');
             const qrImg = document.getElementById('qrCode');
@@ -1385,7 +1408,6 @@
             container.style.display = 'block';
         });
 
-        // Copy invitation link
         document.getElementById('copyLinkBtn').addEventListener('click', function() {
             const url = window.location.origin;
             navigator.clipboard.writeText(url).then(() => {
@@ -1401,11 +1423,11 @@
             });
         });
 
-        // Reload data every 5 seconds to keep in sync
+        // Reload data every 10 seconds
         setInterval(() => {
             loadGallery();
             loadVideos();
-        }, 5000);
+        }, 10000);
 
         // Verify token on load
         fetch(`${API_URL}/api/gallery`, {

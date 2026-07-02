@@ -377,6 +377,12 @@
     </footer>
 
     <script>
+        // ==================== CONFIGURATION ====================
+        // 👇 غيّر هذا الرابط إلى رابط الـ Backend بتاعك على Railway
+        const API_URL = 'https://baptism-blessing-backend.up.railway.app';
+        // لو شغال محلياً استخدم: const API_URL = 'http://localhost:3000';
+        // =====================================================
+
         // Theme and Language management
         const translations = {
             en: {
@@ -477,7 +483,7 @@
         // Load videos
         async function loadVideos() {
             try {
-                const response = await fetch('/api/videos');
+                const response = await fetch(`${API_URL}/api/videos`);
                 if (response.ok) {
                     const videos = await response.json();
                     const grid = document.getElementById('videoGrid');

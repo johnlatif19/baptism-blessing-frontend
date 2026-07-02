@@ -14,15 +14,10 @@ const admin = require('firebase-admin');
 const { v4: uuidv4 } = require('uuid');
 
 // ==================== FACE DETECTION ====================
-// باستخدام face-api.js العادية (مش @vladmandic)
-const faceapi = require('face-api.js');
-const canvas = require('canvas');
+// باستخدام @vladmandic/face-api - شغال على Node.js 24 بدون canvas
+const faceapi = require('@vladmandic/face-api');
 const fs = require('fs');
 const https = require('https');
-
-// إعداد canvas لـ face-api
-const { Canvas, Image, ImageData } = canvas;
-faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
 // ==================== MODEL DOWNLOAD FUNCTIONS ====================
 const MODELS_DIR = path.join(__dirname, 'models');
@@ -81,7 +76,6 @@ let modelsLoaded = false;
 async function loadModels() {
   if (modelsLoaded) return;
   
-  // تحميل النماذج أولاً
   await downloadModelsIfNeeded();
   
   try {
@@ -100,7 +94,10 @@ async function loadModels() {
 async function detectFacesAndEmbeddings(imageBuffer) {
   try {
     await loadModels();
-    const img = await canvas.loadImage(imageBuffer);
+    
+    // تحويل الصورة من Buffer باستخدام @vladmandic/face-api
+    const img = await faceapi.bufferToImage(imageBuffer);
+    
     const detections = await faceapi.detectAllFaces(img, new faceapi.SsdMobilenetv1Options({
       minConfidence: 0.5
     })).withFaceLandmarks().withFaceDescriptors();

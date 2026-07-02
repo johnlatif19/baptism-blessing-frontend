@@ -13,6 +13,154 @@ const cloudinary = require('cloudinary').v2;
 const admin = require('firebase-admin');
 const { v4: uuidv4 } = require('uuid');
 
+// ==================== FACE DETECTION ====================
+// باستخدام face-api.js العادية (مش @vladmandic)
+const faceapi = require('face-api.js');
+const canvas = require('canvas');
+const fs = require('fs');
+const https = require('https');
+
+// إعداد canvas لـ face-api
+const { Canvas, Image, ImageData } = canvas;
+faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
+
+// ==================== MODEL DOWNLOAD FUNCTIONS ====================
+const MODELS_DIR = path.join(__dirname, 'models');
+const MODEL_FILES = [
+  'ssd_mobilenetv1_model-weights_manifest.json',
+  'ssd_mobilenetv1_model-shard1',
+  'ssd_mobilenetv1_model-shard2',
+  'face_landmark_68_model-weights_manifest.json',
+  'face_landmark_68_model-shard1',
+  'face_recognition_model-weights_manifest.json',
+  'face_recognition_model-shard1',
+  'face_recognition_model-shard2'
+];
+
+async function downloadFile(url, filePath) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(filePath);
+    https.get(url, (response) => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed: ${response.statusCode}`));
+        return;
+      }
+      response.pipe(file);
+      file.on('finish', () => {
+        file.close();
+        resolve();
+      });
+      file.on('error', reject);
+    }).on('error', reject);
+  });
+}
+
+async function downloadModelsIfNeeded() {
+  if (!fs.existsSync(MODELS_DIR)) {
+    fs.mkdirSync(MODELS_DIR, { recursive: true });
+  }
+
+  for (const file of MODEL_FILES) {
+    const filePath = path.join(MODELS_DIR, file);
+    if (!fs.existsSync(filePath)) {
+      const url = `https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/${file}`;
+      console.log(`⬇️ Downloading ${file}...`);
+      try {
+        await downloadFile(url, filePath);
+        console.log(`✅ Downloaded ${file}`);
+      } catch (error) {
+        console.error(`❌ Failed ${file}:`, error.message);
+      }
+    }
+  }
+}
+
+// ==================== FACE DETECTION LOGIC ====================
+let modelsLoaded = false;
+
+async function loadModels() {
+  if (modelsLoaded) return;
+  
+  // تحميل النماذج أولاً
+  await downloadModelsIfNeeded();
+  
+  try {
+    console.log('🔄 Loading face detection models...');
+    await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODELS_DIR);
+    await faceapi.nets.faceLandmark68Net.loadFromDisk(MODELS_DIR);
+    await faceapi.nets.faceRecognitionNet.loadFromDisk(MODELS_DIR);
+    modelsLoaded = true;
+    console.log('✅ Face detection models loaded');
+  } catch (error) {
+    console.error('❌ Error loading models:', error.message);
+    throw error;
+  }
+}
+
+async function detectFacesAndEmbeddings(imageBuffer) {
+  try {
+    await loadModels();
+    const img = await canvas.loadImage(imageBuffer);
+    const detections = await faceapi.detectAllFaces(img, new faceapi.SsdMobilenetv1Options({
+      minConfidence: 0.5
+    })).withFaceLandmarks().withFaceDescriptors();
+    
+    if (!detections || detections.length === 0) return [];
+    
+    return detections.map(detection => ({
+      embedding: Array.from(detection.descriptor),
+      detection: {
+        x: detection.detection.box.x,
+        y: detection.detection.box.y,
+        width: detection.detection.box.width,
+        height: detection.detection.box.height
+      }
+    }));
+  } catch (error) {
+    console.error('Error detecting faces:', error);
+    return [];
+  }
+}
+
+function calculateDistance(embedding1, embedding2) {
+  let sum = 0;
+  for (let i = 0; i < embedding1.length; i++) {
+    const diff = embedding1[i] - embedding2[i];
+    sum += diff * diff;
+  }
+  return Math.sqrt(sum);
+}
+
+function distanceToSimilarity(distance) {
+  const similarity = Math.max(0, 1 - distance);
+  return Math.round(similarity * 100) / 100;
+}
+
+function compareEmbeddings(queryEmbedding, storedEmbeddings, threshold = 0.5) {
+  const results = [];
+  for (const stored of storedEmbeddings) {
+    const distance = calculateDistance(queryEmbedding, stored.embedding);
+    const similarity = distanceToSimilarity(distance);
+    if (similarity >= threshold) {
+      results.push({
+        similarity: similarity,
+        imageId: stored.imageId,
+        metadata: stored.metadata || {}
+      });
+    }
+  }
+  results.sort((a, b) => b.similarity - a.similarity);
+  return results;
+}
+
+async function extractFaceEmbeddings(imageBuffer, metadata = {}) {
+  const faceData = await detectFacesAndEmbeddings(imageBuffer);
+  return faceData.map((face, index) => ({
+    embedding: face.embedding,
+    metadata: { ...metadata, faceIndex: index }
+  }));
+}
+
 // ==================== INITIALIZATION ====================
 
 // Validate required environment variables
@@ -451,6 +599,218 @@ app.delete('/api/video/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// ==================== FACE SEARCH ROUTES ====================
+
+// POST - البحث بالوجه
+app.post('/api/search-face', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No image provided' });
+  }
+
+  try {
+    // كشف الوجوه في الصورة المرفوعة
+    const faceData = await detectFacesAndEmbeddings(req.file.buffer);
+    
+    if (!faceData || faceData.length === 0) {
+      return res.json({
+        success: false,
+        message: 'No faces detected'
+      });
+    }
+
+    // جلب الصور من Firestore
+    const snapshot = await db.collection('gallery')
+      .where('faces', '!=', null)
+      .get();
+
+    // تجميع التضمينات المخزنة
+    const storedEmbeddings = [];
+    const imageMap = {};
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      imageMap[doc.id] = {
+        id: doc.id,
+        url: data.url,
+        title: data.title || 'Image'
+      };
+
+      if (data.faces && Array.isArray(data.faces)) {
+        data.faces.forEach(face => {
+          if (face.embedding && face.embedding.length > 0) {
+            storedEmbeddings.push({
+              embedding: face.embedding,
+              imageId: doc.id,
+              metadata: { title: data.title, url: data.url }
+            });
+          }
+        });
+      }
+    });
+
+    // المقارنة
+    const queryEmbedding = faceData[0].embedding;
+    const matches = compareEmbeddings(
+      queryEmbedding,
+      storedEmbeddings,
+      0.5
+    );
+
+    // تجميع النتائج
+    const resultMatches = [];
+    const seenImages = new Set();
+
+    for (const match of matches) {
+      if (!seenImages.has(match.imageId)) {
+        seenImages.add(match.imageId);
+        resultMatches.push({
+          similarity: match.similarity,
+          image: imageMap[match.imageId] || { id: match.imageId }
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      facesDetected: faceData.length,
+      matches: resultMatches
+    });
+
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error during face search'
+    });
+  }
+});
+
+// POST - معالجة صورة واحدة (توليد التضمينات) - يتطلب توثيق
+app.post('/api/gallery/:id/faces', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const doc = await db.collection('gallery').doc(id).get();
+    if (!doc.exists) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    const imageData = doc.data();
+    if (!imageData.url) {
+      return res.status(400).json({ message: 'Image URL not found' });
+    }
+
+    // تحميل الصورة من Cloudinary
+    const response = await fetch(imageData.url);
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    // كشف الوجوه
+    const faceData = await extractFaceEmbeddings(buffer, {
+      title: imageData.title || 'Image',
+      url: imageData.url
+    });
+
+    // حفظ التضمينات
+    await db.collection('gallery').doc(id).update({
+      faces: faceData.map(face => ({
+        embedding: face.embedding,
+        metadata: face.metadata
+      })),
+      faceCount: faceData.length,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    res.json({
+      success: true,
+      message: `Generated embeddings for ${faceData.length} faces`,
+      faceCount: faceData.length
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error generating face embeddings'
+    });
+  }
+});
+
+// POST - معالجة جميع الصور دفعة واحدة - يتطلب توثيق
+app.post('/api/gallery/batch-process-faces', authenticateToken, async (req, res) => {
+  try {
+    const snapshot = await db.collection('gallery')
+      .where('faces', '==', null)
+      .limit(20)
+      .get();
+
+    if (snapshot.empty) {
+      return res.json({
+        success: true,
+        message: 'All images already processed',
+        processed: 0
+      });
+    }
+
+    let processed = 0;
+    for (const doc of snapshot.docs) {
+      try {
+        const data = doc.data();
+        if (!data.url) continue;
+
+        const response = await fetch(data.url);
+        const buffer = Buffer.from(await response.arrayBuffer());
+
+        const faceData = await extractFaceEmbeddings(buffer, {
+          title: data.title || 'Image',
+          url: data.url
+        });
+
+        await db.collection('gallery').doc(doc.id).update({
+          faces: faceData.map(face => ({
+            embedding: face.embedding,
+            metadata: face.metadata
+          })),
+          faceCount: faceData.length,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        processed++;
+      } catch (error) {
+        console.error(`Error processing ${doc.id}:`, error);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Processed ${processed} images`,
+      processed: processed
+    });
+
+  } catch (error) {
+    console.error('Batch error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error processing images'
+    });
+  }
+});
+
+// GET - التحقق من حالة كشف الوجوه
+app.get('/api/face-status', async (req, res) => {
+  try {
+    await loadModels();
+    res.json({
+      status: 'ready',
+      message: 'Face detection is ready'
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unavailable',
+      message: 'Face detection not ready'
+    });
+  }
+});
+
 // ==================== HTML ROUTES (Clean URLs) ====================
 
 // Serve index.html for root
@@ -549,6 +909,10 @@ app.listen(PORT, () => {
   console.log('=================================');
   console.log('📹 Video upload limit: 500MB');
   console.log('⏱️  Cloudinary timeout: 10 minutes');
+  console.log('=================================');
+  console.log('👤 Face Detection:');
+  console.log(`   Status: Enabled ✅`);
+  console.log(`   Models: Will download on first request`);
   console.log('=================================');
 });
 

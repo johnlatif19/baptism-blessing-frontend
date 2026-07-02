@@ -737,6 +737,12 @@
     </main>
 
     <script>
+        // ==================== CONFIGURATION ====================
+        // 👇 غيّر هذا الرابط إلى رابط الـ Backend بتاعك على Railway
+        const API_URL = 'https://baptism-blessing-backend.up.railway.app';
+        // لو شغال محلياً استخدم: const API_URL = 'http://localhost:3000';
+        // =====================================================
+
         // Language translations
         const translations = {
             en: {
@@ -888,7 +894,7 @@
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             try {
-                await fetch('/api/logout', {
+                await fetch(`${API_URL}/api/logout`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -918,7 +924,7 @@
         // Load gallery
         async function loadGallery() {
             try {
-                const response = await fetch('/api/gallery', {
+                const response = await fetch(`${API_URL}/api/gallery`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
@@ -950,7 +956,7 @@
                                 const confirmMsg = currentLang === 'ar' ? 'حذف هذه الصورة؟' : 'Delete this image?';
                                 if (confirm(confirmMsg)) {
                                     try {
-                                        const response = await fetch(`/api/gallery/${id}`, {
+                                        const response = await fetch(`${API_URL}/api/gallery/${id}`, {
                                             method: 'DELETE',
                                             headers: {
                                                 'Authorization': `Bearer ${token}`,
@@ -1012,7 +1018,7 @@
             }, 200);
 
             try {
-                const response = await fetch('/api/gallery', {
+                const response = await fetch(`${API_URL}/api/gallery`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1065,7 +1071,7 @@
         // Load videos
         async function loadVideos() {
             try {
-                const response = await fetch('/api/videos', {
+                const response = await fetch(`${API_URL}/api/videos`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
@@ -1104,7 +1110,7 @@
                                 const confirmMsg = currentLang === 'ar' ? 'حذف هذا الفيديو؟' : 'Delete this video?';
                                 if (confirm(confirmMsg)) {
                                     try {
-                                        const response = await fetch(`/api/video/${id}`, {
+                                        const response = await fetch(`${API_URL}/api/video/${id}`, {
                                             method: 'DELETE',
                                             headers: {
                                                 'Authorization': `Bearer ${token}`,
@@ -1227,7 +1233,7 @@
             status.style.color = 'var(--gold-dark)';
             
             try {
-                const response = await fetch('/api/video', {
+                const response = await fetch(`${API_URL}/api/video`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1302,7 +1308,7 @@
         }, 5000);
 
         // Verify token on load
-        fetch('/api/gallery', {
+        fetch(`${API_URL}/api/gallery`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
             },

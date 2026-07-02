@@ -5,413 +5,222 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baptism Blessing | Photo Gallery</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- Face API Library -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js"></script>
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --ivory: #FDF8F0;
-            --champagne: #F5E6D3;
-            --beige: #E8D5C4;
-            --blush: #F5D6D6;
-            --warm-white: #FFF9F5;
-            --gold: #C9A96E;
-            --gold-light: #E8D5A3;
-            --gold-dark: #B8944A;
-            --marble: #F5F0EB;
-            --text-dark: #2C1810;
-            --text-gold: #A67C52;
-            --shadow: 0 8px 32px rgba(0,0,0,0.08);
-            --glass: rgba(255, 255, 255, 0.15);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --bg-primary: #FDF8F0;
-            --bg-secondary: #FFF9F5;
-            --bg-card: #ffffff;
-            --text-primary: #2C1810;
-            --text-secondary: #A67C52;
-            --border-color: rgba(201, 169, 110, 0.1);
-            --shadow-color: rgba(0,0,0,0.08);
-            --nav-bg: rgba(253, 248, 240, 0.92);
-            --footer-bg: #2C1810;
-            --footer-text: #FFF9F5;
-            --transition: all 0.4s ease;
-            --overlay: rgba(0,0,0,0.85);
-        }
-
-        [data-theme="dark"] {
-            --ivory: #1a1410;
-            --champagne: #2a1f18;
-            --beige: #33261e;
-            --blush: #2a1a1a;
-            --warm-white: #1f1814;
-            --marble: #1a1410;
-            --text-dark: #f5ede8;
-            --text-gold: #d4b896;
-            --shadow: 0 8px 32px rgba(0,0,0,0.4);
-            --glass: rgba(30, 20, 15, 0.6);
-            --glass-border: rgba(200, 180, 160, 0.15);
-            --bg-primary: #1a1410;
-            --bg-secondary: #1f1814;
-            --bg-card: #2a1f18;
-            --text-primary: #f5ede8;
-            --text-secondary: #d4b896;
-            --border-color: rgba(200, 180, 160, 0.1);
-            --shadow-color: rgba(0,0,0,0.4);
-            --nav-bg: rgba(26, 20, 16, 0.92);
-            --footer-bg: #0d0a08;
-            --footer-text: #f5ede8;
-            --overlay: rgba(0,0,0,0.9);
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            transition: var(--transition);
-            min-height: 100vh;
-        }
-
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            padding: 1rem 5%;
-            background: var(--nav-bg);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: var(--transition);
-        }
-
-        .nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-        }
-
-        .nav-logo svg {
-            width: 40px;
-            height: 40px;
-        }
-
-        .nav-logo-text {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.4rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--gold-dark), var(--gold), var(--gold-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .theme-toggle, .lang-toggle {
+        /* ... (keep all your existing CSS) ... */
+        
+        /* Add these new styles for face search */
+        .search-section {
             background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 50px;
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-family: 'Poppins', sans-serif;
-            color: var(--text-primary);
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 2px dashed var(--gold);
+            box-shadow: var(--shadow);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
         }
 
-        .theme-toggle:hover, .lang-toggle:hover {
-            background: var(--gold);
-            color: white;
-            border-color: var(--gold);
-        }
-
-        .theme-toggle svg, .lang-toggle svg {
-            width: 18px;
-            height: 18px;
-        }
-
-        .back-btn {
-            padding: 0.5rem 1.5rem;
-            background: transparent;
-            border: 2px solid var(--gold);
+        .search-section h2 {
+            font-family: 'Playfair Display', serif;
             color: var(--gold-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .search-section p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .search-upload-area {
+            border: 2px dashed var(--gold);
+            border-radius: 16px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        .search-upload-area:hover {
+            border-color: var(--gold-dark);
+            background: var(--bg-secondary);
+        }
+
+        .search-upload-area.dragover {
+            border-color: var(--gold);
+            background: var(--champagne);
+            transform: scale(1.02);
+        }
+
+        .search-upload-area input[type="file"] {
+            display: none;
+        }
+
+        .search-upload-area .icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-upload-area .upload-text {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .search-upload-area .upload-subtext {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        #searchPreview {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 1rem auto;
+            border-radius: 12px;
+            display: none;
+            object-fit: cover;
+            border: 3px solid var(--gold);
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+            color: white;
+            border: none;
+            padding: 0.8rem 2.5rem;
             border-radius: 50px;
             font-family: 'Poppins', sans-serif;
             font-weight: 600;
+            font-size: 1rem;
             cursor: pointer;
             transition: var(--transition);
-            text-decoration: none;
+            margin-top: 1rem;
+            display: none;
         }
 
-        .back-btn:hover {
-            background: var(--gold);
-            color: white;
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(201, 169, 110, 0.4);
         }
 
-        .main-content {
-            padding: 8rem 5% 4rem;
-            max-width: 1400px;
-            margin: 0 auto;
+        .search-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .page-title {
+        .search-results {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .search-results .result-stats {
             font-family: 'Playfair Display', serif;
-            font-size: clamp(2rem, 3.5vw, 3rem);
-            text-align: center;
-            margin-bottom: 3rem;
-            color: var(--text-primary);
-            transition: var(--transition);
+            font-size: 1.2rem;
+            color: var(--gold-dark);
+            margin-bottom: 1.5rem;
         }
 
-        .page-title .gold {
+        .search-results .result-stats .count {
+            font-size: 2rem;
+            font-weight: 700;
             background: linear-gradient(135deg, var(--gold-dark), var(--gold));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            max-width: 1200px;
-            margin: 0 auto;
+        .search-results .gallery-grid {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         }
 
-        .gallery-item {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
+        .search-results .gallery-item {
             aspect-ratio: 1;
-            cursor: pointer;
-            transition: var(--transition);
-            background: var(--bg-card);
         }
 
-        .gallery-item:hover {
-            transform: scale(1.03);
-            box-shadow: 0 12px 40px var(--shadow-color);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .gallery-item:hover img {
-            transform: scale(1.05);
-        }
-
-        .gallery-item .download-btn {
+        .search-results .gallery-item .similarity-badge {
             position: absolute;
-            bottom: 1rem;
-            right: 1rem;
-            background: rgba(0,0,0,0.7);
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(0,0,0,0.75);
             color: white;
-            border: none;
+            padding: 0.25rem 0.75rem;
             border-radius: 50px;
-            padding: 0.5rem 1rem;
-            font-size: 0.8rem;
-            cursor: pointer;
-            opacity: 0;
-            transition: var(--transition);
-            font-family: 'Poppins', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            z-index: 10;
+            font-size: 0.7rem;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .gallery-item:hover .download-btn {
-            opacity: 1;
+        .search-results .gallery-item .similarity-badge.high {
+            background: rgba(46, 204, 113, 0.9);
         }
 
-        .gallery-item .download-btn:hover {
-            background: var(--gold);
-            color: var(--text-dark);
+        .search-results .gallery-item .similarity-badge.medium {
+            background: rgba(241, 196, 15, 0.9);
         }
 
-        .empty-gallery {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: var(--bg-card);
-            border-radius: 24px;
-            border: 2px dashed var(--gold);
-            grid-column: 1 / -1;
+        .search-results .gallery-item .similarity-badge.low {
+            background: rgba(231, 76, 60, 0.9);
         }
 
-        .empty-gallery .icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .empty-gallery h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 2rem;
-            color: var(--gold-dark);
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-gallery p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-        }
-
-        /* Lightbox */
-        .lightbox {
+        .loading-spinner {
             display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--overlay);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            animation: fadeIn 0.3s ease;
+            margin: 1rem auto;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--gold-light);
+            border-top: 4px solid var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
 
-        .lightbox.active {
-            display: flex;
+        .loading-spinner.active {
+            display: inline-block;
         }
 
-        .lightbox img {
-            max-width: 90%;
-            max-height: 85%;
-            object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            animation: zoomIn 0.3s ease;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .lightbox-close {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            color: white;
-            font-size: 2.5rem;
-            cursor: pointer;
-            background: none;
-            border: none;
-            font-family: 'Poppins', sans-serif;
-            transition: transform 0.3s ease;
-        }
-
-        .lightbox-close:hover {
-            transform: rotate(90deg);
-        }
-
-        .lightbox-download {
-            position: absolute;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--gold);
-            color: var(--text-dark);
-            border: none;
+        .reset-search-btn {
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold-dark);
+            padding: 0.5rem 1.5rem;
             border-radius: 50px;
-            padding: 0.8rem 2rem;
-            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
             font-weight: 600;
             cursor: pointer;
-            font-family: 'Poppins', sans-serif;
             transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            z-index: 10;
+            margin-top: 0.5rem;
         }
 
-        .lightbox-download:hover {
-            transform: translateX(-50%) scale(1.05);
-            box-shadow: 0 8px 30px rgba(201, 169, 110, 0.4);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes zoomIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .footer {
-            background: var(--footer-bg);
-            color: var(--footer-text);
-            padding: 3rem 5%;
-            text-align: center;
-            margin-top: 2rem;
-            transition: var(--transition);
-        }
-
-        .footer-logo {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            background: linear-gradient(135deg, var(--gold-light), var(--gold));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 1rem;
-        }
-
-        .footer p {
-            opacity: 0.8;
-            font-size: 0.95rem;
-        }
-
-        .footer .heart {
-            color: var(--blush);
+        .reset-search-btn:hover {
+            background: var(--gold);
+            color: white;
         }
 
         @media (max-width: 768px) {
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            .search-section {
+                padding: 1.5rem;
             }
-
-            .gallery-item .download-btn {
-                opacity: 1;
-                bottom: 0.5rem;
-                right: 0.5rem;
-                padding: 0.3rem 0.7rem;
-                font-size: 0.7rem;
-            }
-
-            .lightbox img {
-                max-width: 95%;
-                max-height: 75%;
-            }
-
-            .lightbox-download {
-                bottom: 1rem;
-                padding: 0.5rem 1.2rem;
-                font-size: 0.8rem;
+            
+            .search-results .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
+        <!-- (keep your existing navbar) -->
         <a href="/" class="nav-logo">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="50" cy="50" r="45" stroke="#C9A96E" stroke-width="2"/>
@@ -449,8 +258,35 @@
 
     <main class="main-content">
         <h1 class="page-title"><span data-i18n="photo.title">Photo</span> <span class="gold" data-i18n="photo.gallery">Gallery</span></h1>
+        
+        <!-- 🔍 Face Search Section -->
+        <div class="search-section" id="searchSection">
+            <h2>🔍 Find Your Photos</h2>
+            <p>Upload a photo of yourself and we'll find all images where you appear</p>
+            
+            <div class="search-upload-area" id="searchUploadArea">
+                <div class="icon">📸</div>
+                <div class="upload-text">Click or drag & drop your photo here</div>
+                <div class="upload-subtext">Supports JPG, PNG, WebP (max 10MB)</div>
+                <input type="file" id="searchInput" accept="image/*">
+                <img id="searchPreview" alt="Your photo preview">
+            </div>
+            
+            <div class="loading-spinner" id="searchSpinner"></div>
+            
+            <button class="search-btn" id="searchBtn">🔍 Find My Photos</button>
+            <button class="reset-search-btn" id="resetSearchBtn" style="display: none;">✕ Clear Results</button>
+        </div>
+
+        <!-- Gallery Grid -->
         <div class="gallery-grid" id="galleryGrid">
             <!-- Gallery images will be loaded here -->
+        </div>
+
+        <!-- Search Results Grid -->
+        <div class="search-results" id="searchResults">
+            <div class="result-stats" id="resultStats"></div>
+            <div class="gallery-grid" id="searchResultsGrid"></div>
         </div>
     </main>
 
@@ -467,7 +303,7 @@
     </footer>
 
     <script>
-        // Theme and Language management
+        // Theme and Language management (keep your existing code)
         const translations = {
             en: {
                 'photo.title': 'Photo',
@@ -486,6 +322,10 @@
         let currentLang = 'en';
         let currentTheme = 'light';
         let currentImageUrl = '';
+        let allFaceData = [];
+        let isProcessing = false;
+        let searchActive = false;
+        let selectedFile = null;
 
         function setTheme(theme) {
             currentTheme = theme;
@@ -549,22 +389,18 @@
 
         // Download function
         function downloadFile(url, filename) {
-            // Use fetch to get the file as blob
             fetch(url)
                 .then(response => response.blob())
                 .then(blob => {
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
-                    link.download = filename || url.split('/').pop() || 'download';
+                    link.download = filename || url.split('/').pop().split('?')[0] || 'download';
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                     URL.revokeObjectURL(link.href);
                 })
-                .catch(err => {
-                    // Fallback: open in new tab
-                    window.open(url, '_blank');
-                });
+                .catch(() => window.open(url, '_blank'));
         }
 
         // Lightbox functions
@@ -589,12 +425,274 @@
             if (e.key === 'Escape') closeLightbox();
         });
 
-        // Download from lightbox
         document.getElementById('lightboxDownload').addEventListener('click', function() {
             if (currentImageUrl) {
                 const filename = currentImageUrl.split('/').pop().split('?')[0] || 'image.jpg';
                 downloadFile(currentImageUrl, filename);
             }
+        });
+
+        // ==================== FACE RECOGNITION FUNCTIONS ====================
+
+        // Load face descriptors from server
+        async function loadFaceDescriptors() {
+            try {
+                const response = await fetch('/api/face-descriptors');
+                if (response.ok) {
+                    allFaceData = await response.json();
+                    console.log(`📊 Loaded ${allFaceData.length} face descriptors`);
+                    return allFaceData;
+                }
+                return [];
+            } catch (error) {
+                console.error('Error loading face descriptors:', error);
+                return [];
+            }
+        }
+
+        // Compare face descriptors (Euclidean distance)
+        function compareFaces(desc1, desc2) {
+            let sum = 0;
+            for (let i = 0; i < desc1.length; i++) {
+                sum += Math.pow(desc1[i] - desc2[i], 2);
+            }
+            const distance = Math.sqrt(sum);
+            const similarity = Math.max(0, 1 - (distance / 1.5));
+            return Math.min(1, similarity);
+        }
+
+        // Search for matching faces
+        async function searchFaces(faceDescriptor) {
+            const matches = [];
+            
+            // Use a threshold of 0.6
+            const threshold = 0.6;
+            
+            for (const item of allFaceData) {
+                if (item.faceDescriptor && item.faceDescriptor.length > 0) {
+                    const similarity = compareFaces(faceDescriptor, item.faceDescriptor);
+                    if (similarity > threshold) {
+                        matches.push({
+                            ...item,
+                            similarity: Math.round(similarity * 100) / 100
+                        });
+                    }
+                }
+            }
+            
+            // Sort by similarity (highest first)
+            matches.sort((a, b) => b.similarity - a.similarity);
+            
+            return matches;
+        }
+
+        // Display search results
+        function displaySearchResults(matches) {
+            const resultsContainer = document.getElementById('searchResults');
+            const resultsGrid = document.getElementById('searchResultsGrid');
+            const stats = document.getElementById('resultStats');
+            
+            if (matches.length === 0) {
+                stats.innerHTML = `❌ No matching photos found. Try another photo.`;
+                resultsGrid.innerHTML = '';
+                resultsContainer.style.display = 'block';
+                return;
+            }
+            
+            stats.innerHTML = `✅ Found <span class="count">${matches.length}</span> photo${matches.length > 1 ? 's' : ''} of you!`;
+            
+            resultsGrid.innerHTML = '';
+            matches.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                
+                const img = document.createElement('img');
+                img.src = item.url;
+                img.alt = item.title || 'Match';
+                img.loading = 'lazy';
+                img.addEventListener('click', () => openLightbox(item.url));
+                
+                // Similarity badge
+                const badge = document.createElement('div');
+                badge.className = 'similarity-badge';
+                const percent = Math.round(item.similarity * 100);
+                badge.textContent = `${percent}% match`;
+                
+                if (percent > 80) badge.classList.add('high');
+                else if (percent > 65) badge.classList.add('medium');
+                else badge.classList.add('low');
+                
+                // Download button
+                const downloadBtn = document.createElement('button');
+                downloadBtn.className = 'download-btn';
+                downloadBtn.innerHTML = '⬇ Download';
+                downloadBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const filename = item.url.split('/').pop().split('?')[0] || 'image.jpg';
+                    downloadFile(item.url, filename);
+                });
+                
+                div.appendChild(img);
+                div.appendChild(badge);
+                div.appendChild(downloadBtn);
+                resultsGrid.appendChild(div);
+            });
+            
+            resultsContainer.style.display = 'block';
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Main search function
+        async function performFaceSearch(imageFile) {
+            if (isProcessing) return;
+            
+            try {
+                isProcessing = true;
+                document.getElementById('searchBtn').disabled = true;
+                document.getElementById('searchBtn').textContent = '⏳ Searching...';
+                document.getElementById('searchSpinner').classList.add('active');
+                document.getElementById('searchResults').style.display = 'none';
+                
+                // Load face descriptors if not loaded
+                if (allFaceData.length === 0) {
+                    await loadFaceDescriptors();
+                }
+                
+                // Load face-api models
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
+                
+                // Read the image
+                const img = await faceapi.bufferToImage(await imageFile.arrayBuffer());
+                
+                // Detect face
+                const detection = await faceapi.detectSingleFace(img)
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+                
+                if (!detection) {
+                    alert('❌ No face detected in the uploaded image. Please try another photo.');
+                    document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
+                    document.getElementById('searchBtn').disabled = false;
+                    document.getElementById('searchSpinner').classList.remove('active');
+                    isProcessing = false;
+                    return;
+                }
+                
+                // Get face descriptor
+                const descriptor = Array.from(detection.descriptor);
+                
+                // Search for matches
+                const matches = await searchFaces(descriptor);
+                
+                // Display results
+                displaySearchResults(matches);
+                
+                document.getElementById('resetSearchBtn').style.display = 'inline-block';
+                document.getElementById('searchBtn').textContent = '✅ Done!';
+                
+            } catch (error) {
+                console.error('Error during face search:', error);
+                alert('❌ Error during search. Please make sure you\'re using a clear photo of a face.');
+            } finally {
+                isProcessing = false;
+                setTimeout(() => {
+                    document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
+                    document.getElementById('searchBtn').disabled = false;
+                }, 2000);
+                document.getElementById('searchSpinner').classList.remove('active');
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
+
+        // File upload handling
+        const searchInput = document.getElementById('searchInput');
+        const searchUploadArea = document.getElementById('searchUploadArea');
+        const searchPreview = document.getElementById('searchPreview');
+
+        searchUploadArea.addEventListener('click', () => searchInput.click());
+
+        searchUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            searchUploadArea.classList.add('dragover');
+        });
+
+        searchUploadArea.addEventListener('dragleave', () => {
+            searchUploadArea.classList.remove('dragover');
+        });
+
+        searchUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            searchUploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.type.startsWith('image/')) {
+                    handleFileSelect(file);
+                } else {
+                    alert('Please upload an image file');
+                }
+            }
+        });
+
+        searchInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            // Validate file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('❌ File is too large. Maximum size is 10MB.');
+                return;
+            }
+            
+            selectedFile = file;
+            
+            // Preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                searchPreview.src = e.target.result;
+                searchPreview.style.display = 'block';
+                document.querySelector('.search-upload-area .icon').style.display = 'none';
+                document.querySelector('.search-upload-area .upload-text').style.display = 'none';
+                document.querySelector('.search-upload-area .upload-subtext').style.display = 'none';
+                document.getElementById('searchBtn').style.display = 'inline-block';
+                document.getElementById('resetSearchBtn').style.display = 'none';
+                document.getElementById('searchResults').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Search button
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            if (selectedFile) {
+                await performFaceSearch(selectedFile);
+            } else {
+                alert('Please select a photo first');
+            }
+        });
+
+        // Reset button
+        document.getElementById('resetSearchBtn').addEventListener('click', () => {
+            selectedFile = null;
+            searchInput.value = '';
+            searchPreview.style.display = 'none';
+            searchPreview.src = '';
+            document.querySelector('.search-upload-area .icon').style.display = 'block';
+            document.querySelector('.search-upload-area .upload-text').style.display = 'block';
+            document.querySelector('.search-upload-area .upload-subtext').style.display = 'block';
+            document.getElementById('searchBtn').style.display = 'none';
+            document.getElementById('resetSearchBtn').style.display = 'none';
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('searchResultsGrid').innerHTML = '';
+            document.getElementById('resultStats').innerHTML = '';
+            searchActive = false;
+            
+            // Scroll back to top
+            document.querySelector('.search-section').scrollIntoView({ behavior: 'smooth' });
         });
 
         // Load gallery images
@@ -652,18 +750,12 @@
                 }
             } catch (error) {
                 console.error('Error loading gallery:', error);
-                const grid = document.getElementById('galleryGrid');
-                grid.innerHTML = `
-                    <div class="empty-gallery">
-                        <div class="icon">📸</div>
-                        <h3 data-i18n="photo.empty">No photos yet</h3>
-                        <p data-i18n="photo.emptySub">Photos will be added after the baptism ceremony</p>
-                    </div>
-                `;
             }
         }
 
+        // Initialize
         loadGallery();
+        loadFaceDescriptors();
     </script>
 </body>
 </html>

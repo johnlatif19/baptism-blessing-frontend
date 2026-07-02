@@ -770,12 +770,12 @@
         <!-- 🔍 Face Search Section -->
         <div class="search-section" id="searchSection">
             <h2 id="searchTitle">🔍 Find Your Photos</h2>
-            <p id="searchDesc">Upload a photo of yourself and we'll find all images where you appear</p>
+            <p id="searchDesc">Upload a photo with ONE face and we'll find all images where you appear</p>
             
             <div class="search-upload-area" id="searchUploadArea">
                 <div class="icon" id="uploadIcon">📸</div>
                 <div class="upload-text" id="uploadText">Click or drag & drop your photo here</div>
-                <div class="upload-subtext" id="uploadSubtext">Supports JPG, PNG, WebP (max 10MB)</div>
+                <div class="upload-subtext" id="uploadSubtext">Only ONE face allowed for search</div>
                 <input type="file" id="searchInput" accept="image/*">
                 <img id="searchPreview" alt="Your photo preview">
             </div>
@@ -830,12 +830,12 @@
                 'photo.empty': 'No photos yet',
                 'photo.emptySub': 'Photos will be added after the baptism ceremony',
                 'search.title': '🔍 Find Your Photos',
-                'search.desc': 'Upload a photo of yourself and we\'ll find all images where you appear',
+                'search.desc': 'Upload a photo with ONE face and we\'ll find all images where you appear',
                 'search.upload': 'Click or drag & drop your photo here',
-                'search.subtext': 'Supports JPG, PNG, WebP (max 10MB)',
+                'search.subtext': 'Only ONE face allowed for search',
                 'search.btn': '🔍 Find My Photos',
                 'search.floating': 'Find My Photos',
-                'search.results.found': 'Found {count} photo{plural} of you!',
+                'search.results.found': '✅ Found <span class="count">{count}</span> photo{plural} of you!',
                 'search.results.none': '❌ No matching photos found. Try another photo.',
                 'search.alert.noface': '❌ No face detected. Please try a clearer photo.',
                 'search.alert.error': '❌ Error: '
@@ -846,9 +846,9 @@
                 'photo.empty': 'لا توجد صور بعد',
                 'photo.emptySub': 'سيتم إضافة الصور بعد حفل المعمودية',
                 'search.title': '🔍 ابحث عن صورك',
-                'search.desc': 'ارفع صورة لنفسك وسنجد كل الصور التي تظهر فيها',
+                'search.desc': 'ارفع صورة بها وجه واحد وسنجد كل الصور التي تظهر فيها',
                 'search.upload': 'اضغط أو اسحب وأفلت صورتك هنا',
-                'search.subtext': 'يدعم JPG, PNG, WebP (حد أقصى 10MB)',
+                'search.subtext': 'يسمح بوجه واحد فقط للبحث',
                 'search.btn': '🔍 ابحث عن صوري',
                 'search.floating': 'ابحث عن صوري',
                 'search.results.found': '✅ تم العثور على <span class="count">{count}</span> صورة{plural} لك!',
@@ -861,9 +861,7 @@
         let currentLang = 'en';
         let currentTheme = 'light';
         let currentImageUrl = '';
-        let allFaceData = [];
         let isProcessing = false;
-        let searchActive = false;
         let selectedFile = null;
         let isSearchOpen = false;
 
@@ -877,7 +875,6 @@
         }
 
         function updateUI() {
-            // Update all elements with data-i18n
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (translations[currentLang]?.[key]) {
@@ -885,7 +882,6 @@
                 }
             });
 
-            // Update search section elements
             document.getElementById('searchTitle').textContent = t('search.title');
             document.getElementById('searchDesc').textContent = t('search.desc');
             document.getElementById('uploadText').textContent = t('search.upload');
@@ -1020,31 +1016,13 @@
             }
         });
 
-        // ==================== FACE RECOGNITION FUNCTIONS ====================
-
-        // Load face descriptors from server
-        async function loadFaceDescriptors() {
-            try {
-                const response = await fetch(`${API_URL}/api/face-descriptors`);
-                if (response.ok) {
-                    allFaceData = await response.json();
-                    console.log(`📊 Loaded ${allFaceData.length} face descriptors`);
-                    return allFaceData;
-                }
-                return [];
-            } catch (error) {
-                console.error('Error loading face descriptors:', error);
-                return [];
-            }
-        }
-
-        // Display search results
+        // ==================== DISPLAY SEARCH RESULTS ====================
         function displaySearchResults(matches) {
             const resultsContainer = document.getElementById('searchResults');
             const resultsGrid = document.getElementById('searchResultsGrid');
             const stats = document.getElementById('resultStats');
             
-            if (matches.length === 0) {
+            if (!matches || matches.length === 0) {
                 stats.innerHTML = t('search.results.none');
                 resultsGrid.innerHTML = '';
                 resultsContainer.style.display = 'block';
@@ -1067,7 +1045,8 @@
                 
                 const badge = document.createElement('div');
                 badge.className = 'similarity-badge';
-                const percent = Math.round(item.similarity * 100);
+                // ✅ استخدام matchPercentage من الـ API
+                const percent = item.matchPercentage || 0;
                 badge.textContent = `${percent}% match`;
                 
                 if (percent > 80) badge.classList.add('high');
@@ -1093,9 +1072,7 @@
             resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        // ============================================================
-        // ✅✅✅ الدالة المعدلة - بتستخدم API الـ Backend ✅✅✅
-        // ============================================================
+        // ==================== PERFORM FACE SEARCH ====================
         async function performFaceSearch(imageFile) {
             if (isProcessing) return;
             
@@ -1107,7 +1084,6 @@
                 document.getElementById('searchSpinner').classList.add('active');
                 document.getElementById('searchResults').style.display = 'none';
                 
-                // ✅ استخدام الـ API بتاع الـ Backend مباشرة
                 const formData = new FormData();
                 formData.append('faceImage', imageFile);
                 
@@ -1127,9 +1103,7 @@
                     return;
                 }
                 
-                // عرض النتائج
                 displaySearchResults(data.matches);
-                
                 document.getElementById('resetSearchBtn').style.display = 'inline-block';
                 searchBtn.textContent = '✅ Done!';
                 
@@ -1146,11 +1120,9 @@
                 document.getElementById('searchSpinner').classList.remove('active');
             }
         }
-        // ============================================================
 
         // ==================== EVENT LISTENERS ====================
 
-        // File upload handling
         const searchInput = document.getElementById('searchInput');
         const searchUploadArea = document.getElementById('searchUploadArea');
         const searchPreview = document.getElementById('searchPreview');
@@ -1207,7 +1179,6 @@
             reader.readAsDataURL(file);
         }
 
-        // Search button
         document.getElementById('searchBtn').addEventListener('click', async () => {
             if (selectedFile) {
                 await performFaceSearch(selectedFile);
@@ -1216,7 +1187,6 @@
             }
         });
 
-        // Reset button
         document.getElementById('resetSearchBtn').addEventListener('click', () => {
             selectedFile = null;
             searchInput.value = '';
@@ -1230,7 +1200,6 @@
             document.getElementById('searchResults').style.display = 'none';
             document.getElementById('searchResultsGrid').innerHTML = '';
             document.getElementById('resultStats').innerHTML = '';
-            searchActive = false;
             
             if (isSearchOpen) {
                 isSearchOpen = false;
@@ -1295,7 +1264,6 @@
 
         // Initialize
         loadGallery();
-        loadFaceDescriptors();
     </script>
 </body>
 </html>

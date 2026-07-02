@@ -13,35 +13,6 @@ const cloudinary = require('cloudinary').v2;
 const admin = require('firebase-admin');
 const { v4: uuidv4 } = require('uuid');
 
-// ==================== FACE RECOGNITION SETUP ====================
-const faceapi = require('@vladmandic/face-api');
-const canvas = require('canvas');
-
-// Configure face-api to use canvas
-const { Canvas, Image, ImageData } = canvas;
-faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
-
-let faceDetectionModelLoaded = false;
-
-// Load face detection models on startup
-async function loadFaceModels() {
-    try {
-        // Models will be loaded from node_modules/@vladmandic/face-api/model
-        await faceapi.nets.ssdMobilenetv1.loadFromDisk('./node_modules/@vladmandic/face-api/model');
-        await faceapi.nets.faceLandmark68Net.loadFromDisk('./node_modules/@vladmandic/face-api/model');
-        await faceapi.nets.faceRecognitionNet.loadFromDisk('./node_modules/@vladmandic/face-api/model');
-        faceDetectionModelLoaded = true;
-        console.log('✅ Face detection models loaded successfully');
-    } catch (error) {
-        console.error('❌ Failed to load face detection models:', error.message);
-        console.log('⚠️ Face recognition features will be disabled');
-        // Continue without face detection - features will be disabled
-    }
-}
-
-// Call this after server starts
-loadFaceModels();
-
 // ==================== INITIALIZATION ====================
 
 // Validate required environment variables
@@ -120,7 +91,7 @@ app.use(cors({
 // Compression
 app.use(compression());
 
-// JSON and URL encoded - زودنا لـ 500MB
+// JSON and URL encoded
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 
@@ -159,7 +130,6 @@ const upload = multer({
     fileSize: 500 * 1024 * 1024 // 500MB for videos
   },
   fileFilter: (req, file, cb) => {
-    // Allow images and videos
     const allowedTypes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
       'video/mp4', 'video/mpeg', 'video/quicktime', 'video/x-msvideo', 'video/webm'
@@ -200,50 +170,6 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-// ==================== FACE RECOGNITION HELPER FUNCTIONS ====================
-
-// Helper function to extract face descriptor from image buffer
-async function extractFaceDescriptor(imageBuffer) {
-    if (!faceDetectionModelLoaded) {
-        throw new Error('Face detection models not loaded');
-    }
-
-    try {
-        // Decode image using canvas
-        const img = new Image();
-        img.src = imageBuffer;
-        
-        // Detect faces
-        const detections = await faceapi.detectSingleFace(img)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-
-        if (!detections) {
-            throw new Error('No face detected in the image');
-        }
-
-        // Return face descriptor as array
-        return Array.from(detections.descriptor);
-    } catch (error) {
-        throw new Error(`Face detection failed: ${error.message}`);
-    }
-}
-
-// Helper function to compare two face descriptors
-function compareFaces(descriptor1, descriptor2) {
-    // Calculate Euclidean distance
-    let sum = 0;
-    for (let i = 0; i < descriptor1.length; i++) {
-        sum += Math.pow(descriptor1[i] - descriptor2[i], 2);
-    }
-    const distance = Math.sqrt(sum);
-    
-    // Convert distance to similarity score (0-1)
-    // Lower distance = higher similarity
-    const similarity = Math.max(0, 1 - (distance / 1.5));
-    return Math.min(1, similarity);
-}
-
 // ==================== API ROUTES ====================
 
 // Health check
@@ -251,8 +177,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    faceRecognition: faceDetectionModelLoaded ? 'enabled' : 'disabled'
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -271,7 +196,6 @@ app.post('/api/login', [
   const { username, password, rememberMe } = req.body;
 
   try {
-    // Check if user exists in Firestore
     const userSnapshot = await db.collection('users')
       .where('username', '==', username)
       .limit(1)
@@ -285,10 +209,8 @@ app.post('/api/login', [
       userData = userSnapshot.docs[0].data();
     }
 
-    // If no user found, check hardcoded admin from .env
     if (!userData) {
       if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        // Create admin user in database if not exists
         const adminCheck = await db.collection('users')
           .where('username', '==', ADMIN_USERNAME)
           .limit(1)
@@ -320,13 +242,11 @@ app.post('/api/login', [
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
-    // Verify password
     const isValidPassword = await bcrypt.compare(password, userData.password);
     if (!isValidPassword) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
-    // Generate token
     const token = jwt.sign(
       { username: userData.username, role: userData.role || 'admin' },
       JWT_SECRET,
@@ -374,14 +294,13 @@ app.get('/api/gallery', async (req, res) => {
   }
 });
 
-// POST upload image with face detection
+// POST upload image
 app.post('/api/gallery', authenticateToken, upload.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No image file provided' });
   }
 
   try {
-    // Upload to Cloudinary
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -399,44 +318,20 @@ app.post('/api/gallery', authenticateToken, upload.single('image'), async (req, 
       uploadStream.end(req.file.buffer);
     });
 
-    // Try to extract face descriptor (optional - continue even if fails)
-    let faceDescriptor = null;
-    if (faceDetectionModelLoaded) {
-      try {
-        faceDescriptor = await extractFaceDescriptor(req.file.buffer);
-        console.log('✅ Face descriptor extracted successfully');
-      } catch (faceError) {
-        console.warn('⚠️ No face detected in uploaded image:', faceError.message);
-        // Continue without face descriptor
-      }
-    } else {
-      console.log('ℹ️ Face detection models not loaded, skipping face descriptor extraction');
-    }
-
-    // Save to Firestore with face descriptor if available
     const imageData = {
       url: result.secure_url,
       publicId: result.public_id,
       title: req.body.title || 'Image',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      hasFace: faceDescriptor !== null
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-    // Add face descriptor only if detected
-    if (faceDescriptor) {
-      imageData.faceDescriptor = faceDescriptor;
-    }
-
     const docRef = await db.collection('gallery').add(imageData);
-    
     res.status(201).json({ 
       message: 'Image uploaded successfully',
       id: docRef.id,
       url: result.secure_url,
       publicId: result.public_id,
-      title: imageData.title,
-      hasFace: faceDescriptor !== null,
-      faceDetected: faceDescriptor !== null
+      title: imageData.title
     });
   } catch (error) {
     console.error('Error uploading image:', error);
@@ -465,114 +360,6 @@ app.delete('/api/gallery/:id', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Error deleting image:', error);
     res.status(500).json({ message: 'Error deleting image' });
-  }
-});
-
-// ==================== FACE RECOGNITION ROUTES ====================
-
-// GET all face descriptors (for client-side comparison)
-app.get('/api/face-descriptors', async (req, res) => {
-  try {
-    const snapshot = await db.collection('gallery')
-      .select('url', 'faceDescriptor', 'title')
-      .get();
-    
-    const faceData = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      if (data.faceDescriptor && data.faceDescriptor.length > 0) {
-        faceData.push({
-          id: doc.id,
-          url: data.url,
-          title: data.title || 'Image',
-          faceDescriptor: data.faceDescriptor
-        });
-      }
-    });
-    
-    res.json(faceData);
-  } catch (error) {
-    console.error('Error fetching face descriptors:', error);
-    res.status(500).json({ message: 'Error fetching face descriptors' });
-  }
-});
-
-// POST extract face descriptor from uploaded image (for admin uploads)
-app.post('/api/face/extract', authenticateToken, upload.single('image'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'No image file provided' });
-  }
-
-  try {
-    const descriptor = await extractFaceDescriptor(req.file.buffer);
-    res.json({ 
-      success: true, 
-      descriptor: descriptor,
-      message: 'Face descriptor extracted successfully'
-    });
-  } catch (error) {
-    console.error('Error extracting face descriptor:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
-  }
-});
-
-// POST search for faces (client uploads photo, server compares)
-app.post('/api/face/search', upload.single('faceImage'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: 'No image file provided' });
-  }
-
-  try {
-    // Check if face detection is available
-    if (!faceDetectionModelLoaded) {
-      return res.status(503).json({ 
-        success: false, 
-        message: 'Face recognition is currently unavailable. Please try again later.' 
-      });
-    }
-
-    // Extract face descriptor from the uploaded image
-    const targetDescriptor = await extractFaceDescriptor(req.file.buffer);
-    
-    // Get all images with face descriptors
-    const snapshot = await db.collection('gallery')
-      .select('url', 'faceDescriptor', 'title')
-      .get();
-    
-    const matches = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      if (data.faceDescriptor && data.faceDescriptor.length > 0) {
-        const similarity = compareFaces(targetDescriptor, data.faceDescriptor);
-        if (similarity > 0.6) { // Threshold for match
-          matches.push({
-            id: doc.id,
-            url: data.url,
-            title: data.title || 'Image',
-            similarity: Math.round(similarity * 100) / 100
-          });
-        }
-      }
-    });
-
-    // Sort by similarity (highest first)
-    matches.sort((a, b) => b.similarity - a.similarity);
-
-    res.json({
-      success: true,
-      matches: matches,
-      count: matches.length,
-      message: matches.length > 0 ? 'Faces found!' : 'No matching faces found'
-    });
-  } catch (error) {
-    console.error('Error searching for faces:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message 
-    });
   }
 });
 
@@ -660,27 +447,22 @@ app.delete('/api/video/:id', authenticateToken, async (req, res) => {
 
 // ==================== HTML ROUTES (Clean URLs) ====================
 
-// Serve index.html for root
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Serve login.html for /login
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Serve dashboard.html for /dashboard
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Serve gallery.html for /gallery
 app.get('/gallery', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'gallery.html'));
 });
 
-// Serve videos.html for /videos
 app.get('/videos', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'videos.html'));
 });
@@ -707,7 +489,6 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error('Server Error:', err);
   
-  // Multer error handling
   if (err instanceof multer.MulterError) {
     if (err.code === 'FILE_TOO_LARGE') {
       return res.status(413).json({ message: 'File too large. Maximum size is 500MB' });
@@ -715,7 +496,6 @@ app.use((err, req, res, next) => {
     return res.status(400).json({ message: err.message });
   }
 
-  // JWT error handling
   if (err.name === 'JsonWebTokenError') {
     return res.status(403).json({ message: 'Invalid token' });
   }
@@ -724,7 +504,6 @@ app.use((err, req, res, next) => {
     return res.status(403).json({ message: 'Token expired' });
   }
 
-  // Default error
   res.status(500).json({ 
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
@@ -742,7 +521,6 @@ app.listen(PORT, () => {
   console.log(`🔐 JWT: ${JWT_SECRET ? 'Configured ✅' : 'Missing ❌'}`);
   console.log(`☁️  Cloudinary: ${process.env.CLOUDINARY_CLOUD_NAME ? 'Configured ✅' : 'Missing ❌'}`);
   console.log(`🔥 Firebase: ${firebaseConfig.project_id ? 'Configured ✅' : 'Missing ❌'}`);
-  console.log(`🧠 Face Recognition: ${faceDetectionModelLoaded ? '✅ Loaded' : '❌ Disabled'}`);
   console.log('=================================');
   console.log('📋 Admin Credentials from .env:');
   console.log(`   Username: ${ADMIN_USERNAME}`);
@@ -758,10 +536,8 @@ app.listen(PORT, () => {
   console.log('📹 Video upload limit: 500MB');
   console.log('⏱️  Cloudinary timeout: 10 minutes');
   console.log('=================================');
-  console.log('🧠 Face Recognition Endpoints:');
-  console.log(`   GET  /api/face-descriptors - Get all face descriptors`);
-  console.log(`   POST /api/face/extract - Extract face from image`);
-  console.log(`   POST /api/face/search - Search for matching faces`);
+  console.log('🧠 Face Recognition runs entirely in the browser (Client-Side)');
+  console.log('📱 No server-side dependencies required!');
   console.log('=================================');
 });
 

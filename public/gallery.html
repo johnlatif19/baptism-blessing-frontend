@@ -537,7 +537,6 @@
             font-weight: 400;
         }
 
-        /* Clear button inside floating */
         .floating-clear-btn {
             background: rgba(0,0,0,0.7);
             color: white;
@@ -770,13 +769,13 @@
         
         <!-- 🔍 Face Search Section -->
         <div class="search-section" id="searchSection">
-            <h2>🔍 Find Your Photos</h2>
-            <p>Upload a photo of yourself and we'll find all images where you appear</p>
+            <h2 id="searchTitle">🔍 Find Your Photos</h2>
+            <p id="searchDesc">Upload a photo of yourself and we'll find all images where you appear</p>
             
             <div class="search-upload-area" id="searchUploadArea">
-                <div class="icon">📸</div>
-                <div class="upload-text">Click or drag & drop your photo here</div>
-                <div class="upload-subtext">Supports JPG, PNG, WebP (max 10MB)</div>
+                <div class="icon" id="uploadIcon">📸</div>
+                <div class="upload-text" id="uploadText">Click or drag & drop your photo here</div>
+                <div class="upload-subtext" id="uploadSubtext">Supports JPG, PNG, WebP (max 10MB)</div>
                 <input type="file" id="searchInput" accept="image/*">
                 <img id="searchPreview" alt="Your photo preview">
             </div>
@@ -809,7 +808,7 @@
     <!-- ===== FLOATING SEARCH TOGGLE BUTTON ===== -->
     <button class="floating-search-toggle closed" id="floatingSearchToggle">
         <span class="icon">🔍</span>
-        <span>Find My Photos</span>
+        <span id="floatingBtnText">Find My Photos</span>
         <span class="badge" id="searchBadge"></span>
     </button>
 
@@ -823,19 +822,39 @@
         const API_URL = 'https://baptism-blessing-backend.up.railway.app';
         // =====================================================
 
-        // Theme and Language management
+        // ==================== TRANSLATIONS ====================
         const translations = {
             en: {
                 'photo.title': 'Photo',
                 'photo.gallery': 'Gallery',
                 'photo.empty': 'No photos yet',
                 'photo.emptySub': 'Photos will be added after the baptism ceremony',
+                'search.title': '🔍 Find Your Photos',
+                'search.desc': 'Upload a photo of yourself and we\'ll find all images where you appear',
+                'search.upload': 'Click or drag & drop your photo here',
+                'search.subtext': 'Supports JPG, PNG, WebP (max 10MB)',
+                'search.btn': '🔍 Find My Photos',
+                'search.floating': 'Find My Photos',
+                'search.results.found': 'Found {count} photo{plural} of you!',
+                'search.results.none': '❌ No matching photos found. Try another photo.',
+                'search.alert.noface': '❌ No face detected. Please try a clearer photo.',
+                'search.alert.error': '❌ Error: '
             },
             ar: {
                 'photo.title': 'معرض',
                 'photo.gallery': 'الصور',
                 'photo.empty': 'لا توجد صور بعد',
                 'photo.emptySub': 'سيتم إضافة الصور بعد حفل المعمودية',
+                'search.title': '🔍 ابحث عن صورك',
+                'search.desc': 'ارفع صورة لنفسك وسنجد كل الصور التي تظهر فيها',
+                'search.upload': 'اضغط أو اسحب وأفلت صورتك هنا',
+                'search.subtext': 'يدعم JPG, PNG, WebP (حد أقصى 10MB)',
+                'search.btn': '🔍 ابحث عن صوري',
+                'search.floating': 'ابحث عن صوري',
+                'search.results.found': '✅ تم العثور على <span class="count">{count}</span> صورة{plural} لك!',
+                'search.results.none': '❌ لا توجد صور مطابقة. جرب صورة أخرى.',
+                'search.alert.noface': '❌ لم يتم اكتشاف وجه. جرب صورة أوضح.',
+                'search.alert.error': '❌ خطأ: '
             }
         };
 
@@ -848,6 +867,39 @@
         let selectedFile = null;
         let isSearchOpen = false;
 
+        // ==================== LANGUAGE FUNCTION ====================
+        function t(key, params = {}) {
+            let text = translations[currentLang]?.[key] || translations['en'][key] || key;
+            for (const [k, v] of Object.entries(params)) {
+                text = text.replace(`{${k}}`, v);
+            }
+            return text;
+        }
+
+        function updateUI() {
+            // Update all elements with data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang]?.[key]) {
+                    el.textContent = translations[currentLang][key];
+                }
+            });
+
+            // Update search section elements
+            document.getElementById('searchTitle').textContent = t('search.title');
+            document.getElementById('searchDesc').textContent = t('search.desc');
+            document.getElementById('uploadText').textContent = t('search.upload');
+            document.getElementById('uploadSubtext').textContent = t('search.subtext');
+            
+            const searchBtn = document.getElementById('searchBtn');
+            if (!searchBtn.disabled) {
+                searchBtn.textContent = t('search.btn');
+            }
+            
+            document.getElementById('floatingBtnText').textContent = t('search.floating');
+        }
+
+        // ==================== THEME ====================
         function setTheme(theme) {
             currentTheme = theme;
             document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
@@ -886,13 +938,7 @@
             document.documentElement.lang = lang;
             document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
             document.getElementById('langLabel').textContent = lang === 'ar' ? 'AR' : 'EN';
-
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (translations[lang] && translations[lang][key]) {
-                    el.textContent = translations[lang][key];
-                }
-            });
+            updateUI();
         }
 
         document.getElementById('themeToggle').addEventListener('click', function() {
@@ -992,38 +1038,6 @@
             }
         }
 
-        // Compare face descriptors (Euclidean distance)
-        function compareFaces(desc1, desc2) {
-            let sum = 0;
-            for (let i = 0; i < desc1.length; i++) {
-                sum += Math.pow(desc1[i] - desc2[i], 2);
-            }
-            const distance = Math.sqrt(sum);
-            const similarity = Math.max(0, 1 - (distance / 1.5));
-            return Math.min(1, similarity);
-        }
-
-        // Search for matching faces
-        async function searchFaces(faceDescriptor) {
-            const matches = [];
-            const threshold = 0.6;
-            
-            for (const item of allFaceData) {
-                if (item.faceDescriptor && item.faceDescriptor.length > 0) {
-                    const similarity = compareFaces(faceDescriptor, item.faceDescriptor);
-                    if (similarity > threshold) {
-                        matches.push({
-                            ...item,
-                            similarity: Math.round(similarity * 100) / 100
-                        });
-                    }
-                }
-            }
-            
-            matches.sort((a, b) => b.similarity - a.similarity);
-            return matches;
-        }
-
         // Display search results
         function displaySearchResults(matches) {
             const resultsContainer = document.getElementById('searchResults');
@@ -1031,13 +1045,14 @@
             const stats = document.getElementById('resultStats');
             
             if (matches.length === 0) {
-                stats.innerHTML = `❌ No matching photos found. Try another photo.`;
+                stats.innerHTML = t('search.results.none');
                 resultsGrid.innerHTML = '';
                 resultsContainer.style.display = 'block';
                 return;
             }
             
-            stats.innerHTML = `✅ Found <span class="count">${matches.length}</span> photo${matches.length > 1 ? 's' : ''} of you!`;
+            const plural = matches.length > 1 ? 's' : '';
+            stats.innerHTML = t('search.results.found', { count: matches.length, plural: plural });
             
             resultsGrid.innerHTML = '';
             matches.forEach(item => {
@@ -1079,15 +1094,16 @@
         }
 
         // ============================================================
-        // ✅✅✅ الدالة المعدلة ✅✅✅
+        // ✅✅✅ الدالة المعدلة - بتستخدم API الـ Backend ✅✅✅
         // ============================================================
         async function performFaceSearch(imageFile) {
             if (isProcessing) return;
             
             try {
                 isProcessing = true;
-                document.getElementById('searchBtn').disabled = true;
-                document.getElementById('searchBtn').textContent = '⏳ Searching...';
+                const searchBtn = document.getElementById('searchBtn');
+                searchBtn.disabled = true;
+                searchBtn.textContent = '⏳ Searching...';
                 document.getElementById('searchSpinner').classList.add('active');
                 document.getElementById('searchResults').style.display = 'none';
                 
@@ -1103,9 +1119,9 @@
                 const data = await response.json();
                 
                 if (!data.success) {
-                    alert('❌ ' + data.message);
-                    document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
-                    document.getElementById('searchBtn').disabled = false;
+                    alert(t('search.alert.error') + data.message);
+                    searchBtn.textContent = t('search.btn');
+                    searchBtn.disabled = false;
                     document.getElementById('searchSpinner').classList.remove('active');
                     isProcessing = false;
                     return;
@@ -1115,16 +1131,17 @@
                 displaySearchResults(data.matches);
                 
                 document.getElementById('resetSearchBtn').style.display = 'inline-block';
-                document.getElementById('searchBtn').textContent = '✅ Done!';
+                searchBtn.textContent = '✅ Done!';
                 
             } catch (error) {
                 console.error('Error during face search:', error);
-                alert('❌ Error: ' + error.message);
+                alert(t('search.alert.error') + error.message);
             } finally {
                 isProcessing = false;
                 setTimeout(() => {
-                    document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
-                    document.getElementById('searchBtn').disabled = false;
+                    const searchBtn = document.getElementById('searchBtn');
+                    searchBtn.textContent = t('search.btn');
+                    searchBtn.disabled = false;
                 }, 2000);
                 document.getElementById('searchSpinner').classList.remove('active');
             }
@@ -1268,12 +1285,7 @@
                                 <p data-i18n="photo.emptySub">Photos will be added after the baptism ceremony</p>
                             </div>
                         `;
-                        document.querySelectorAll('[data-i18n]').forEach(el => {
-                            const key = el.getAttribute('data-i18n');
-                            if (translations[currentLang] && translations[currentLang][key]) {
-                                el.textContent = translations[currentLang][key];
-                            }
-                        });
+                        updateUI();
                     }
                 }
             } catch (error) {

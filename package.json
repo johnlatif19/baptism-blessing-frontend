@@ -34,8 +34,7 @@
     "express-rate-limit": "^6.11.2",
     "express-validator": "^7.0.1",
     "uuid": "^9.0.1",
-    "face-api.js": "^0.22.2",
-    "canvas": "^2.11.2"
+    "@vladmandic/face-api": "^1.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

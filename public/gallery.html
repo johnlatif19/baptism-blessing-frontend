@@ -919,7 +919,6 @@
                 searchSection.classList.add('open');
                 floatingToggle.classList.remove('closed');
                 floatingToggle.classList.add('open');
-                // Scroll to search section after a tiny delay
                 setTimeout(() => {
                     searchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
@@ -1079,145 +1078,58 @@
             resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        // ===== LOAD FACE-API MODELS WITH BETTER ERROR HANDLING =====
-        async function loadFaceModels() {
+        // ============================================================
+        // ✅✅✅ الدالة المعدلة ✅✅✅
+        // ============================================================
+        async function performFaceSearch(imageFile) {
+            if (isProcessing) return;
+            
             try {
-                // Try loading from multiple CDN sources
-                const modelUrls = [
-                    'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model',
-                    'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights'
-                ];
+                isProcessing = true;
+                document.getElementById('searchBtn').disabled = true;
+                document.getElementById('searchBtn').textContent = '⏳ Searching...';
+                document.getElementById('searchSpinner').classList.add('active');
+                document.getElementById('searchResults').style.display = 'none';
                 
-                let loaded = false;
-                for (const url of modelUrls) {
-                    try {
-                        console.log(`🔄 Trying to load models from: ${url}`);
-                        await faceapi.nets.ssdMobilenetv1.loadFromUri(url);
-                        await faceapi.nets.faceLandmark68Net.loadFromUri(url);
-                        await faceapi.nets.faceRecognitionNet.loadFromUri(url);
-                        console.log(`✅ Models loaded successfully from: ${url}`);
-                        loaded = true;
-                        break;
-                    } catch (e) {
-                        console.warn(`⚠️ Failed to load from ${url}:`, e.message);
-                    }
+                // ✅ استخدام الـ API بتاع الـ Backend مباشرة
+                const formData = new FormData();
+                formData.append('faceImage', imageFile);
+                
+                const response = await fetch(`${API_URL}/api/face/search`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    alert('❌ ' + data.message);
+                    document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
+                    document.getElementById('searchBtn').disabled = false;
+                    document.getElementById('searchSpinner').classList.remove('active');
+                    isProcessing = false;
+                    return;
                 }
                 
-                if (!loaded) {
-                    // Try one more time with a fallback
-                    console.log('🔄 Trying fallback model loading...');
-                    await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
-                    await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
-                    await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
-                }
+                // عرض النتائج
+                displaySearchResults(data.matches);
                 
-                return true;
+                document.getElementById('resetSearchBtn').style.display = 'inline-block';
+                document.getElementById('searchBtn').textContent = '✅ Done!';
+                
             } catch (error) {
-                console.error('❌ All model loading attempts failed:', error);
-                return false;
+                console.error('Error during face search:', error);
+                alert('❌ Error: ' + error.message);
+            } finally {
+                isProcessing = false;
+                setTimeout(() => {
+                    document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
+                    document.getElementById('searchBtn').disabled = false;
+                }, 2000);
+                document.getElementById('searchSpinner').classList.remove('active');
             }
         }
-
-        // Main search function - UPDATED with better error handling
-
-async function performFaceSearch(imageFile) {
-    if (isProcessing) return;
-    
-    try {
-        isProcessing = true;
-        document.getElementById('searchBtn').disabled = true;
-        document.getElementById('searchBtn').textContent = '⏳ Loading AI models...';
-        document.getElementById('searchSpinner').classList.add('active');
-        document.getElementById('searchResults').style.display = 'none';
-        
-        // Load face descriptors if not loaded
-        if (allFaceData.length === 0) {
-            await loadFaceDescriptors();
-        }
-        
-        // Load face-api models with better error handling
-        document.getElementById('searchBtn').textContent = '⏳ Loading face detection...';
-        const modelsLoaded = await loadFaceModels();
-        
-        if (!modelsLoaded) {
-            alert('❌ Could not load face detection models. Please check your internet connection and try again.');
-            document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
-            document.getElementById('searchBtn').disabled = false;
-            document.getElementById('searchSpinner').classList.remove('active');
-            isProcessing = false;
-            return;
-        }
-        
-        // ✅ الطريقة الصحيحة: استخدام Image من DOM بدل bufferToImage
-        document.getElementById('searchBtn').textContent = '⏳ Analyzing face...';
-        
-        // إنشاء Image عنصر في DOM
-        const img = new Image();
-        
-        // تحويل الـ File لـ Object URL
-        const imageUrl = URL.createObjectURL(imageFile);
-        
-        // انتظار تحميل الصورة
-        await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-            img.src = imageUrl;
-        });
-        
-        // ✅ استخدام canvas لتحويل الصورة للـ format المناسب
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        
-        // تحويل canvas لـ blob لاستخدامه مع face-api
-        const blob = await new Promise(resolve => {
-            canvas.toBlob(resolve, 'image/jpeg', 0.95);
-        });
-        
-        // تنظيف الـ URL
-        URL.revokeObjectURL(imageUrl);
-        
-        // الآن استخدم blob مع face-api
-        const detection = await faceapi.detectSingleFace(blob)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-        
-        if (!detection) {
-            alert('❌ No face detected in the uploaded image. Please try another photo with a clear face.');
-            document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
-            document.getElementById('searchBtn').disabled = false;
-            document.getElementById('searchSpinner').classList.remove('active');
-            isProcessing = false;
-            return;
-        }
-        
-        // Get face descriptor
-        const descriptor = Array.from(detection.descriptor);
-        
-        // Search for matches
-        document.getElementById('searchBtn').textContent = '⏳ Searching...';
-        const matches = await searchFaces(descriptor);
-        
-        // Display results
-        displaySearchResults(matches);
-        
-        document.getElementById('resetSearchBtn').style.display = 'inline-block';
-        document.getElementById('searchBtn').textContent = '✅ Done!';
-        
-    } catch (error) {
-        console.error('Error during face search:', error);
-        alert('❌ Error during search. Please make sure you\'re using a clear photo of a face.\n\nDetails: ' + error.message);
-    } finally {
-        isProcessing = false;
-        setTimeout(() => {
-            document.getElementById('searchBtn').textContent = '🔍 Find My Photos';
-            document.getElementById('searchBtn').disabled = false;
-        }, 2000);
-        document.getElementById('searchSpinner').classList.remove('active');
-    }
-}
+        // ============================================================
 
         // ==================== EVENT LISTENERS ====================
 
@@ -1303,7 +1215,6 @@ async function performFaceSearch(imageFile) {
             document.getElementById('resultStats').innerHTML = '';
             searchActive = false;
             
-            // Close search section if open
             if (isSearchOpen) {
                 isSearchOpen = false;
                 searchSection.classList.remove('open');

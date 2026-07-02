@@ -407,6 +407,12 @@
     </div>
 
     <script>
+        // ==================== CONFIGURATION ====================
+        // 👇 غيّر هذا الرابط إلى رابط الـ Backend بتاعك على Railway
+        const API_URL = 'https://your-backend.railway.app';
+        // لو شغال محلياً استخدم: const API_URL = 'http://localhost:3000';
+        // =====================================================
+
         // Language translations
         const translations = {
             en: {
@@ -534,7 +540,7 @@
             }
 
             try {
-                const response = await fetch('/api/login', {
+                const response = await fetch(`${API_URL}/api/login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -561,18 +567,18 @@
         });
 
         // Check if already logged in
-const token = localStorage.getItem('token');
-if (token) {
-    fetch('/api/gallery', {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    }).then(response => {
-        if (response.ok) {
-            window.location.href = '/dashboard';
+        const token = localStorage.getItem('token');
+        if (token) {
+            fetch(`${API_URL}/api/gallery`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = '/dashboard';
+                }
+            }).catch(() => {});
         }
-    }).catch(() => {});
-}
     </script>
 </body>
 </html>

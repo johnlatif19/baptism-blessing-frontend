@@ -349,7 +349,7 @@
         }
 
         .item-list {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
         }
 
@@ -431,7 +431,6 @@
             margin-top: 0.25rem;
         }
 
-        /* Loading spinner and progress bar */
         .btn-loading {
             position: relative;
             color: transparent !important;
@@ -523,6 +522,43 @@
             font-size: 1rem;
         }
 
+        .file-list {
+            margin-top: 0.5rem;
+        }
+
+        .file-list .file-item {
+            display: inline-block;
+            background: var(--bg-primary);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin: 0.2rem;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .selected-count {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        .progress-container.multi {
+            margin-top: 0.5rem;
+        }
+
+        .upload-status-item {
+            font-size: 0.75rem;
+            padding: 0.2rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-status-item .status-icon {
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 768px) {
             .hamburger {
                 display: flex;
@@ -567,7 +603,6 @@
             flex-direction: row-reverse;
         }
 
-        /* Scrollbar styling */
         .item-list::-webkit-scrollbar {
             width: 6px;
         }
@@ -653,19 +688,21 @@
                 </h3>
                 <form id="galleryForm">
                     <div class="form-group">
-                        <label data-i18n="dashboard.uploadImage">Upload Image</label>
+                        <label data-i18n="dashboard.uploadImages">Upload Images</label>
                         <div class="file-input-wrapper">
-                            <button class="btn btn-outline btn-sm" data-i18n="dashboard.chooseImage">Choose Image</button>
-                            <input type="file" id="galleryFile" accept="image/*" required>
+                            <button class="btn btn-outline btn-sm" data-i18n="dashboard.chooseImages">Choose Images</button>
+                            <input type="file" id="galleryFile" accept="image/*" multiple required>
                         </div>
-                        <span id="galleryFileName" style="font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.5rem; transition: var(--transition);"></span>
+                        <div class="file-list" id="galleryFileList"></div>
+                        <div class="selected-count" id="galleryFileCount"></div>
                     </div>
-                    <button type="submit" class="btn btn-primary" id="galleryUploadBtn" data-i18n="dashboard.upload">Upload Image</button>
-                    <div class="progress-container" id="galleryProgress">
+                    <button type="submit" class="btn btn-primary" id="galleryUploadBtn" data-i18n="dashboard.uploadImagesBtn">Upload All Images</button>
+                    <div class="progress-container multi" id="galleryProgress">
                         <div class="progress-bar">
                             <div class="progress-fill" id="galleryProgressFill"></div>
                         </div>
                         <div class="progress-text" id="galleryProgressText">Uploading...</div>
+                        <div id="galleryUploadStatus"></div>
                     </div>
                 </form>
                 <div style="margin-top: 1rem;">
@@ -686,24 +723,18 @@
                 </h3>
                 <form id="videoForm">
                     <div class="form-group">
-                        <label data-i18n="dashboard.videoFile">Upload Video</label>
-                        <button type="button" class="btn btn-primary cloudinary-btn" id="cloudinaryUploadBtn">📤 Choose Video</button>
-                        <div class="file-info" id="videoFileInfo" data-i18n="dashboard.videoFileInfo">Click to upload (max 500MB)</div>
+                        <label data-i18n="dashboard.videoFiles">Upload Videos</label>
+                        <button type="button" class="btn btn-primary cloudinary-btn" id="cloudinaryUploadBtn">📤 Choose Videos</button>
+                        <div class="file-info" id="videoFileInfo" data-i18n="dashboard.videoFileInfo">Click to upload multiple videos (max 500MB each)</div>
                     </div>
-                    <div class="form-group">
-                        <label data-i18n="dashboard.videoTitle">Title</label>
-                        <input type="text" id="videoTitle" data-i18n-placeholder="dashboard.videoTitlePlaceholder" placeholder="Video title">
-                    </div>
-                    <div class="form-group">
-                        <label data-i18n="dashboard.videoDesc">Description</label>
-                        <input type="text" id="videoDesc" data-i18n-placeholder="dashboard.videoDescPlaceholder" placeholder="Brief description">
-                    </div>
+                    <div id="videoUploadList"></div>
                     <div id="uploadStatus" style="margin-top: 0.5rem; display: none; color: var(--gold-dark); font-weight: 600; text-align: center;"></div>
-                    <div class="progress-container" id="videoProgress">
+                    <div class="progress-container multi" id="videoProgress">
                         <div class="progress-bar">
                             <div class="progress-fill" id="videoProgressFill"></div>
                         </div>
                         <div class="progress-text" id="videoProgressText">Uploading...</div>
+                        <div id="videoUploadStatus"></div>
                     </div>
                 </form>
                 <div style="margin-top: 1rem;">
@@ -738,9 +769,7 @@
 
     <script>
         // ==================== CONFIGURATION ====================
-        // 👇 غيّر هذا الرابط إلى رابط الـ Backend بتاعك على Railway
         const API_URL = 'https://baptism-blessing-backend.up.railway.app';
-        // لو شغال محلياً استخدم: const API_URL = 'http://localhost:3000';
         // =====================================================
 
         // Language translations
@@ -752,18 +781,14 @@
                 'dashboard.title': 'Welcome to Baptism Blessing Dashboard',
                 'dashboard.subtitle': 'Manage your invitation website content',
                 'dashboard.galleryManagement': 'Gallery Management',
-                'dashboard.uploadImage': 'Upload Image',
-                'dashboard.chooseImage': 'Choose Image',
-                'dashboard.upload': 'Upload Image',
+                'dashboard.uploadImages': 'Upload Images',
+                'dashboard.chooseImages': 'Choose Images',
+                'dashboard.uploadImagesBtn': 'Upload All Images',
                 'dashboard.currentGallery': 'Current Gallery',
                 'dashboard.videoManagement': 'Video Management',
-                'dashboard.videoFile': 'Upload Video',
-                'dashboard.videoFileInfo': 'Click to upload (max 500MB)',
-                'dashboard.videoTitle': 'Title',
-                'dashboard.videoTitlePlaceholder': 'Video title',
-                'dashboard.videoDesc': 'Description',
-                'dashboard.videoDescPlaceholder': 'Brief description',
-                'dashboard.uploadVideo': 'Upload Video',
+                'dashboard.videoFiles': 'Upload Videos',
+                'dashboard.videoFileInfo': 'Click to upload multiple videos (max 500MB each)',
+                'dashboard.uploadVideo': 'Upload Videos',
                 'dashboard.currentVideos': 'Current Videos',
                 'dashboard.tools': 'Tools',
                 'dashboard.generateQR': 'Generate QR Code',
@@ -772,7 +797,12 @@
                 'dashboard.delete': 'Delete',
                 'dashboard.image': 'Image',
                 'dashboard.video': 'Video',
-                'dashboard.videoTooLarge': 'Video file is too large. Maximum size is 500MB.'
+                'dashboard.videoTooLarge': 'Video file is too large. Maximum size is 500MB.',
+                'dashboard.uploading': 'Uploading...',
+                'dashboard.uploadComplete': 'Upload complete!',
+                'dashboard.uploadFailed': 'Upload failed',
+                'dashboard.imagesSelected': 'images selected',
+                'dashboard.uploadingProgress': 'Uploading {current} of {total}'
             },
             ar: {
                 'dashboard.brand': 'معمودية البركة',
@@ -781,18 +811,14 @@
                 'dashboard.title': 'مرحباً بكم في لوحة تحكم معمودية البركة',
                 'dashboard.subtitle': 'إدارة محتوى موقع دعوتكم',
                 'dashboard.galleryManagement': 'إدارة المعرض',
-                'dashboard.uploadImage': 'رفع صورة',
-                'dashboard.chooseImage': 'اختر صورة',
-                'dashboard.upload': 'رفع الصورة',
+                'dashboard.uploadImages': 'رفع صور',
+                'dashboard.chooseImages': 'اختر صور',
+                'dashboard.uploadImagesBtn': 'رفع جميع الصور',
                 'dashboard.currentGallery': 'المعرض الحالي',
                 'dashboard.videoManagement': 'إدارة الفيديوهات',
-                'dashboard.videoFile': 'رفع فيديو',
-                'dashboard.videoFileInfo': 'اضغط للرفع (حد أقصى 500 ميجابايت)',
-                'dashboard.videoTitle': 'العنوان',
-                'dashboard.videoTitlePlaceholder': 'عنوان الفيديو',
-                'dashboard.videoDesc': 'الوصف',
-                'dashboard.videoDescPlaceholder': 'وصف مختصر',
-                'dashboard.uploadVideo': 'رفع الفيديو',
+                'dashboard.videoFiles': 'رفع فيديوهات',
+                'dashboard.videoFileInfo': 'اضغط لرفع فيديوهات متعددة (حد أقصى 500 ميجابايت لكل فيديو)',
+                'dashboard.uploadVideo': 'رفع فيديوهات',
                 'dashboard.currentVideos': 'الفيديوهات الحالية',
                 'dashboard.tools': 'الأدوات',
                 'dashboard.generateQR': 'إنشاء رمز QR',
@@ -801,13 +827,20 @@
                 'dashboard.delete': 'حذف',
                 'dashboard.image': 'صورة',
                 'dashboard.video': 'فيديو',
-                'dashboard.videoTooLarge': 'حجم الفيديو كبير جداً. الحد الأقصى 500 ميجابايت.'
+                'dashboard.videoTooLarge': 'حجم الفيديو كبير جداً. الحد الأقصى 500 ميجابايت.',
+                'dashboard.uploading': 'جاري الرفع...',
+                'dashboard.uploadComplete': 'تم الرفع بنجاح!',
+                'dashboard.uploadFailed': 'فشل الرفع',
+                'dashboard.imagesSelected': 'صورة محددة',
+                'dashboard.uploadingProgress': 'جاري رفع {current} من {total}'
             }
         };
 
         let currentLang = 'en';
         let currentTheme = 'light';
         let token = null;
+        let uploadQueue = [];
+        let isUploading = false;
 
         // Theme management
         function setTheme(theme) {
@@ -921,6 +954,115 @@
             }, 5000);
         }
 
+        // ==================== MULTIPLE GALLERY IMAGES ====================
+
+        // Display selected image files
+        document.getElementById('galleryFile').addEventListener('change', function() {
+            const fileList = document.getElementById('galleryFileList');
+            const fileCount = document.getElementById('galleryFileCount');
+            const files = this.files;
+            
+            fileList.innerHTML = '';
+            for (let i = 0; i < files.length; i++) {
+                const span = document.createElement('span');
+                span.className = 'file-item';
+                span.textContent = files[i].name;
+                fileList.appendChild(span);
+            }
+            
+            const imgLabel = currentLang === 'ar' ? 'صورة' : 'image';
+            fileCount.textContent = files.length > 0 ? `${files.length} ${imgLabel}${files.length > 1 ? 's' : ''} ${currentLang === 'ar' ? 'محددة' : 'selected'}` : '';
+        });
+
+        // Upload multiple images
+        document.getElementById('galleryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('galleryFile');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                showStatus(currentLang === 'ar' ? 'يرجى اختيار صور.' : 'Please select images.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('galleryUploadBtn');
+            const progressContainer = document.getElementById('galleryProgress');
+            const progressFill = document.getElementById('galleryProgressFill');
+            const progressText = document.getElementById('galleryProgressText');
+            const statusContainer = document.getElementById('galleryUploadStatus');
+
+            btn.disabled = true;
+            btn.classList.add('btn-loading');
+            progressContainer.classList.add('active');
+            progressFill.style.width = '0%';
+            statusContainer.innerHTML = '';
+
+            let uploaded = 0;
+            const total = files.length;
+
+            for (let i = 0; i < files.length; i++) {
+                const formData = new FormData();
+                formData.append('image', files[i]);
+
+                // Update progress
+                const progress = ((i) / total) * 100;
+                progressFill.style.width = progress + '%';
+                const progressMsg = currentLang === 'ar' 
+                    ? `جاري رفع ${i+1} من ${total}`
+                    : `Uploading ${i+1} of ${total}`;
+                progressText.textContent = progressMsg;
+
+                const statusItem = document.createElement('div');
+                statusItem.className = 'upload-status-item';
+                statusItem.id = `gallery-status-${i}`;
+                statusItem.innerHTML = `<span>${files[i].name}</span> <span class="status-icon">⏳</span>`;
+                statusContainer.appendChild(statusItem);
+
+                try {
+                    const response = await fetch(`${API_URL}/api/gallery`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        },
+                        body: formData,
+                    });
+
+                    const statusEl = document.getElementById(`gallery-status-${i}`);
+                    if (response.ok) {
+                        uploaded++;
+                        statusEl.innerHTML = `<span>${files[i].name}</span> <span class="status-icon">✅</span>`;
+                    } else {
+                        statusEl.innerHTML = `<span>${files[i].name}</span> <span class="status-icon">❌</span>`;
+                    }
+                } catch (error) {
+                    const statusEl = document.getElementById(`gallery-status-${i}`);
+                    statusEl.innerHTML = `<span>${files[i].name}</span> <span class="status-icon">❌</span>`;
+                }
+            }
+
+            progressFill.style.width = '100%';
+            progressText.textContent = currentLang === 'ar' ? '✅ تم الرفع بنجاح!' : '✅ Upload complete!';
+            
+            const successMsg = currentLang === 'ar' 
+                ? `تم رفع ${uploaded} من ${total} صورة بنجاح.`
+                : `Uploaded ${uploaded} of ${total} images successfully.`;
+            showStatus(successMsg);
+            
+            btn.disabled = false;
+            btn.classList.remove('btn-loading');
+            
+            setTimeout(() => {
+                progressContainer.classList.remove('active');
+                progressFill.style.width = '0%';
+                statusContainer.innerHTML = '';
+            }, 3000);
+
+            fileInput.value = '';
+            document.getElementById('galleryFileList').innerHTML = '';
+            document.getElementById('galleryFileCount').textContent = '';
+            loadGallery();
+        });
+
         // Load gallery
         async function loadGallery() {
             try {
@@ -983,89 +1125,184 @@
 
         loadGallery();
 
-        // Upload gallery image with loading
-        document.getElementById('galleryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const fileInput = document.getElementById('galleryFile');
-            const file = fileInput.files[0];
-            const btn = document.getElementById('galleryUploadBtn');
-            const progressContainer = document.getElementById('galleryProgress');
-            const progressFill = document.getElementById('galleryProgressFill');
-            const progressText = document.getElementById('galleryProgressText');
+        // ==================== MULTIPLE VIDEO UPLOAD ====================
 
-            if (!file) {
-                showStatus(currentLang === 'ar' ? 'يرجى اختيار صورة.' : 'Please select an image.', 'error');
-                return;
-            }
-
-            // Disable button and show loading
-            btn.disabled = true;
-            btn.classList.add('btn-loading');
-            progressContainer.classList.add('active');
-            progressFill.style.width = '0%';
-            progressText.textContent = currentLang === 'ar' ? 'جاري الرفع...' : 'Uploading...';
-
-            const formData = new FormData();
-            formData.append('image', file);
-
-            // Simulate progress
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += Math.random() * 10;
-                if (progress > 90) progress = 90;
-                progressFill.style.width = progress + '%';
-                progressText.textContent = `${Math.round(progress)}%`;
-            }, 200);
-
-            try {
-                const response = await fetch(`${API_URL}/api/gallery`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
+        // Cloudinary Upload - Multiple Videos
+        document.getElementById('cloudinaryUploadBtn').addEventListener('click', function() {
+            const cloudName = 'dpwla5xca';
+            const uploadPreset = 'baptism_upload';
+            
+            const widget = cloudinary.createUploadWidget({
+                cloudName: cloudName,
+                uploadPreset: uploadPreset,
+                sources: ['local'],
+                multiple: true,
+                maxFileSize: 500 * 1024 * 1024,
+                resourceType: 'video',
+                showAdvancedOptions: false,
+                cropping: false,
+                maxFiles: 10,
+                styles: {
+                    palette: {
+                        window: '#FFFFFF',
+                        sourceBg: '#FDF8F0',
+                        windowBorder: '#C9A96E',
+                        tabIcon: '#C9A96E',
+                        inactiveTabIcon: '#A67C52',
+                        menuIcons: '#C9A96E',
+                        link: '#C9A96E',
+                        action: '#C9A96E',
+                        inProgress: '#E8D5A3',
+                        complete: '#B8944A',
+                        error: '#e74c3c',
+                        textDark: '#2C1810',
+                        textLight: '#FFF9F5'
+                    }
+                },
+                text: {
+                    en: {
+                        queue: {
+                            title: 'Upload Videos',
+                            title_uploading: 'Uploading...',
+                            title_done: 'Upload Complete',
+                            title_error: 'Upload Failed'
+                        },
+                        local: {
+                            browse: 'Choose Videos from Device',
+                            dd_title_single: 'Drag and Drop Videos Here'
+                        },
+                        upload: {
+                            button: 'Upload'
+                        }
                     },
-                    body: formData,
-                });
-
-                clearInterval(progressInterval);
-                
-                if (response.ok) {
-                    progressFill.style.width = '100%';
-                    progressText.textContent = currentLang === 'ar' ? '✅ تم الرفع بنجاح!' : '✅ Upload complete!';
-                    showStatus(currentLang === 'ar' ? 'تم رفع الصورة بنجاح!' : 'Image uploaded successfully!');
-                    fileInput.value = '';
-                    document.getElementById('galleryFileName').textContent = '';
-                    
-                    // Success animation
-                    btn.classList.remove('btn-loading');
-                    btn.classList.add('upload-success');
-                    setTimeout(() => btn.classList.remove('upload-success'), 500);
-                    
-                    setTimeout(() => {
-                        progressContainer.classList.remove('active');
-                        progressFill.style.width = '0%';
-                    }, 1500);
-                    
-                    loadGallery();
-                } else {
-                    const error = await response.json();
-                    showStatus(error.message || (currentLang === 'ar' ? 'فشل في رفع الصورة.' : 'Failed to upload image.'), 'error');
-                    progressContainer.classList.remove('active');
+                    ar: {
+                        queue: {
+                            title: 'رفع فيديوهات',
+                            title_uploading: 'جاري الرفع...',
+                            title_done: 'تم الرفع بنجاح',
+                            title_error: 'فشل الرفع'
+                        },
+                        local: {
+                            browse: 'اختر فيديوهات من الجهاز',
+                            dd_title_single: 'اسحب وأفلت الفيديوهات هنا'
+                        },
+                        upload: {
+                            button: 'رفع'
+                        }
+                    }
                 }
-            } catch (error) {
-                clearInterval(progressInterval);
-                showStatus(currentLang === 'ar' ? 'خطأ في الشبكة. يرجى المحاولة مرة أخرى.' : 'Network error. Please try again.', 'error');
-                progressContainer.classList.remove('active');
-            } finally {
-                btn.disabled = false;
-                btn.classList.remove('btn-loading');
-            }
+            }, function(error, result) {
+                if (!error && result && result.event === 'success') {
+                    // Handle each uploaded video
+                    const videoInfo = result.info;
+                    const videoUrl = videoInfo.secure_url;
+                    const publicId = videoInfo.public_id;
+                    
+                    // Show upload status
+                    const statusContainer = document.getElementById('videoUploadList');
+                    const statusItem = document.createElement('div');
+                    statusItem.className = 'upload-status-item';
+                    statusItem.innerHTML = `<span>${videoInfo.original_filename || 'Video'}</span> <span class="status-icon">⏳</span>`;
+                    statusContainer.appendChild(statusItem);
+                    
+                    // Save to database
+                    saveVideoToDatabase(videoUrl, publicId, videoInfo.original_filename || 'Video', '');
+                } else if (error) {
+                    showStatus(currentLang === 'ar' ? 'خطأ في رفع الفيديوهات. حاول مرة أخرى.' : 'Error uploading videos. Please try again.', 'error');
+                }
+            });
+            widget.open();
         });
 
-        document.getElementById('galleryFile').addEventListener('change', function() {
-            const fileName = this.files[0]?.name || '';
-            const fileSize = this.files[0]?.size || 0;
-            const sizeInMB = (fileSize / (1024 * 1024)).toFixed(2);
-            document.getElementById('galleryFileName').textContent = fileName ? `${fileName} (${sizeInMB} MB)` : '';
+        let videoUploadCount = 0;
+        let videoTotalCount = 0;
+
+        async function saveVideoToDatabase(url, publicId, title, description) {
+            const progressContainer = document.getElementById('videoProgress');
+            const progressFill = document.getElementById('videoProgressFill');
+            const progressText = document.getElementById('videoProgressText');
+            const status = document.getElementById('uploadStatus');
+            const statusContainer = document.getElementById('videoUploadList');
+            
+            progressContainer.classList.add('active');
+            status.style.display = 'block';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/video`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        url, 
+                        publicId, 
+                        title: title || 'Video', 
+                        description: description || '' 
+                    })
+                });
+                
+                // Update progress
+                videoUploadCount++;
+                const progress = Math.min((videoUploadCount / videoTotalCount) * 100, 100);
+                progressFill.style.width = progress + '%';
+                progressText.textContent = currentLang === 'ar' 
+                    ? `جاري رفع ${videoUploadCount} من ${videoTotalCount}`
+                    : `Uploading ${videoUploadCount} of ${videoTotalCount}`;
+                
+                // Update status for this video
+                const items = statusContainer.querySelectorAll('.upload-status-item');
+                const lastItem = items[items.length - 1];
+                if (lastItem) {
+                    const icon = lastItem.querySelector('.status-icon');
+                    if (response.ok) {
+                        icon.textContent = '✅';
+                        status.textContent = currentLang === 'ar' ? 'تم رفع الفيديو بنجاح!' : 'Video uploaded successfully!';
+                        status.style.color = '#28a745';
+                    } else {
+                        icon.textContent = '❌';
+                        status.textContent = currentLang === 'ar' ? 'فشل في رفع الفيديو.' : 'Failed to upload video.';
+                        status.style.color = '#e74c3c';
+                    }
+                }
+                
+                if (response.ok) {
+                    showStatus(currentLang === 'ar' ? 'تم رفع الفيديو بنجاح!' : 'Video uploaded successfully!');
+                    loadVideos();
+                } else {
+                    const error = await response.json();
+                    showStatus(error.message || (currentLang === 'ar' ? 'فشل في حفظ الفيديو.' : 'Failed to save video.'), 'error');
+                }
+            } catch (error) {
+                showStatus(currentLang === 'ar' ? 'خطأ في الشبكة.' : 'Network error.', 'error');
+                const items = statusContainer.querySelectorAll('.upload-status-item');
+                const lastItem = items[items.length - 1];
+                if (lastItem) {
+                    lastItem.querySelector('.status-icon').textContent = '❌';
+                }
+            }
+            
+            // Check if all videos are uploaded
+            if (videoUploadCount >= videoTotalCount) {
+                progressFill.style.width = '100%';
+                progressText.textContent = currentLang === 'ar' ? '✅ تم رفع جميع الفيديوهات!' : '✅ All videos uploaded!';
+                setTimeout(() => {
+                    progressContainer.classList.remove('active');
+                    progressFill.style.width = '0%';
+                    status.style.display = 'none';
+                    videoUploadCount = 0;
+                    videoTotalCount = 0;
+                    statusContainer.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // Override the widget open to track total videos
+        const originalOpen = document.getElementById('cloudinaryUploadBtn').click;
+        document.getElementById('cloudinaryUploadBtn').addEventListener('click', function() {
+            videoUploadCount = 0;
+            videoTotalCount = 0;
+            document.getElementById('videoUploadList').innerHTML = '';
         });
 
         // Load videos
@@ -1137,144 +1374,7 @@
 
         loadVideos();
 
-        // ==================== CLOUDINARY UPLOAD WIDGET ====================
-
-        // Cloudinary Upload
-        document.getElementById('cloudinaryUploadBtn').addEventListener('click', function() {
-            const cloudName = 'dpwla5xca';
-            const uploadPreset = 'baptism_upload';
-            
-            const widget = cloudinary.createUploadWidget({
-                cloudName: cloudName,
-                uploadPreset: uploadPreset,
-                sources: ['local'],
-                multiple: false,
-                maxFileSize: 500 * 1024 * 1024,
-                resourceType: 'video',
-                showAdvancedOptions: false,
-                cropping: false,
-                styles: {
-                    palette: {
-                        window: '#FFFFFF',
-                        sourceBg: '#FDF8F0',
-                        windowBorder: '#C9A96E',
-                        tabIcon: '#C9A96E',
-                        inactiveTabIcon: '#A67C52',
-                        menuIcons: '#C9A96E',
-                        link: '#C9A96E',
-                        action: '#C9A96E',
-                        inProgress: '#E8D5A3',
-                        complete: '#B8944A',
-                        error: '#e74c3c',
-                        textDark: '#2C1810',
-                        textLight: '#FFF9F5'
-                    }
-                },
-                // تخصيص النصوص
-                text: {
-                    en: {
-                        queue: {
-                            title: 'Upload Video',
-                            title_uploading: 'Uploading...',
-                            title_done: 'Upload Complete',
-                            title_error: 'Upload Failed'
-                        },
-                        local: {
-                            browse: 'Choose Video from Device',
-                            dd_title_single: 'Drag and Drop Video Here'
-                        },
-                        upload: {
-                            button: 'Upload'
-                        }
-                    },
-                    ar: {
-                        queue: {
-                            title: 'رفع فيديو',
-                            title_uploading: 'جاري الرفع...',
-                            title_done: 'تم الرفع بنجاح',
-                            title_error: 'فشل الرفع'
-                        },
-                        local: {
-                            browse: 'اختر فيديو من الجهاز',
-                            dd_title_single: 'اسحب وأفلت الفيديو هنا'
-                        },
-                        upload: {
-                            button: 'رفع'
-                        }
-                    }
-                }
-            }, function(error, result) {
-                if (!error && result && result.event === 'success') {
-                    const videoUrl = result.info.secure_url;
-                    const publicId = result.info.public_id;
-                    const title = document.getElementById('videoTitle').value || 'Video';
-                    const description = document.getElementById('videoDesc').value || '';
-                    
-                    // Save to Firestore via API (small payload)
-                    saveVideoToDatabase(videoUrl, publicId, title, description);
-                } else if (error) {
-                    showStatus(currentLang === 'ar' ? 'خطأ في رفع الفيديو. حاول مرة أخرى.' : 'Error uploading video. Please try again.', 'error');
-                }
-            });
-            widget.open();
-        });
-
-        async function saveVideoToDatabase(url, publicId, title, description) {
-            const progressContainer = document.getElementById('videoProgress');
-            const progressFill = document.getElementById('videoProgressFill');
-            const progressText = document.getElementById('videoProgressText');
-            const status = document.getElementById('uploadStatus');
-            
-            progressContainer.classList.add('active');
-            progressFill.style.width = '50%';
-            progressText.textContent = currentLang === 'ar' ? 'جاري الحفظ في قاعدة البيانات...' : 'Saving to database...';
-            status.style.display = 'block';
-            status.textContent = currentLang === 'ar' ? 'جاري الحفظ...' : 'Saving...';
-            status.style.color = 'var(--gold-dark)';
-            
-            try {
-                const response = await fetch(`${API_URL}/api/video`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ 
-                        url, 
-                        publicId, 
-                        title, 
-                        description 
-                    })
-                });
-                
-                if (response.ok) {
-                    progressFill.style.width = '100%';
-                    progressText.textContent = currentLang === 'ar' ? '✅ تم الرفع بنجاح!' : '✅ Upload complete!';
-                    status.textContent = currentLang === 'ar' ? '✅ تم رفع الفيديو بنجاح!' : '✅ Video uploaded successfully!';
-                    status.style.color = '#28a745';
-                    showStatus(currentLang === 'ar' ? 'تم رفع الفيديو بنجاح!' : 'Video uploaded successfully!');
-                    document.getElementById('videoTitle').value = '';
-                    document.getElementById('videoDesc').value = '';
-                    loadVideos();
-                    setTimeout(() => {
-                        progressContainer.classList.remove('active');
-                        progressFill.style.width = '0%';
-                        status.style.display = 'none';
-                    }, 3000);
-                } else {
-                    const error = await response.json();
-                    showStatus(error.message || (currentLang === 'ar' ? 'فشل في حفظ الفيديو في قاعدة البيانات.' : 'Failed to save video to database.'), 'error');
-                    progressContainer.classList.remove('active');
-                    status.style.display = 'none';
-                }
-            } catch (error) {
-                showStatus(currentLang === 'ar' ? 'خطأ في الشبكة. يرجى المحاولة مرة أخرى.' : 'Network error. Please try again.', 'error');
-                progressContainer.classList.remove('active');
-                status.style.display = 'none';
-            }
-        }
-
-        // ==================== END CLOUDINARY UPLOAD WIDGET ====================
+        // ==================== QR CODE AND COPY LINK ====================
 
         // Generate QR Code
         document.getElementById('generateQRBtn').addEventListener('click', function() {

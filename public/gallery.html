@@ -473,6 +473,41 @@
             color: white;
         }
 
+        /* Floating Search Button */
+        .floating-search-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 999;
+            background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+            color: white;
+            border: none;
+            border-radius: 60px;
+            padding: 1rem 2rem;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 8px 30px rgba(201, 169, 110, 0.4);
+            transition: all 0.3s ease;
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .floating-search-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(201, 169, 110, 0.5);
+        }
+
+        .floating-search-btn .icon {
+            font-size: 1.5rem;
+        }
+
+        .floating-search-btn.active {
+            display: flex;
+        }
+
         /* Lightbox */
         .lightbox {
             display: none;
@@ -614,6 +649,14 @@
             .search-results .gallery-grid {
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             }
+
+            .floating-search-btn {
+                bottom: 1.5rem;
+                right: 1.5rem;
+                padding: 0.8rem 1.5rem;
+                font-size: 0.9rem;
+                border-radius: 50px;
+            }
         }
     </style>
 </head>
@@ -694,6 +737,12 @@
         <img id="lightboxImage" src="" alt="Gallery image">
         <button class="lightbox-download" id="lightboxDownload">⬇ Download</button>
     </div>
+
+    <!-- Floating Search Button -->
+    <button class="floating-search-btn" id="floatingSearchBtn">
+        <span class="icon">🔍</span>
+        <span>Find My Photos</span>
+    </button>
 
     <footer class="footer">
         <div class="footer-logo">Baptism Blessing</div>
@@ -962,12 +1011,12 @@
                     await loadFaceDescriptors();
                 }
                 
-                // Load face-api models
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
-                await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model');
+                // Load face-api models from CDN with correct path
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/model');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/model');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/model');
                 
-                // Read the image
+                // Read the image using canvas
                 const img = await faceapi.bufferToImage(await imageFile.arrayBuffer());
                 
                 // Detect face
@@ -1097,6 +1146,30 @@
             
             // Scroll back to top
             document.querySelector('.search-section').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // ==================== FLOATING SEARCH BUTTON ====================
+        const floatingBtn = document.getElementById('floatingSearchBtn');
+
+        // Show floating button when search section is out of view
+        window.addEventListener('scroll', function() {
+            const searchSection = document.getElementById('searchSection');
+            if (searchSection) {
+                const rect = searchSection.getBoundingClientRect();
+                if (rect.bottom < 0) {
+                    floatingBtn.classList.add('active');
+                } else {
+                    floatingBtn.classList.remove('active');
+                }
+            }
+        });
+
+        // Scroll to search section when clicking floating button
+        floatingBtn.addEventListener('click', function() {
+            document.getElementById('searchSection').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
         });
 
         // Load gallery images
